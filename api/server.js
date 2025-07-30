@@ -46,4 +46,4 @@ app.use('/ridepay', topUpRoutes);
 // });
 
 module.exports = app;
-module.exports.handler = require('serverless-http')(app); // Key line!
+module.exports.handler = serverless(app); 
