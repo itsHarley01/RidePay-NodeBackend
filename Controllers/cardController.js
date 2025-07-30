@@ -33,3 +33,28 @@ exports.updateCardPrice = async (req, res) => {
     return res.status(500).json({ message: 'Failed to update card price' })
   }
 }
+
+// GET: Fetch all issued cards
+exports.getAllCards = async (req, res) => {
+  try {
+    const snapshot = await db.ref('k44d_r1g3s_74l').once('value')
+
+    if (!snapshot.exists()) {
+      return res.status(404).json({ message: 'No cards found' })
+    }
+
+    const cardsData = snapshot.val()
+    const cardsArray = Object.entries(cardsData).map(([cardId, card]) => ({
+      cardId,
+      cardStatus: card.cardStatus || null,
+      dateOfIssuance: card.dateOfIssuance || null,
+      tagUid: card.tagUid || null,
+      userUid: card.userUid || null,
+    }))
+
+    return res.status(200).json({ cards: cardsArray })
+  } catch (error) {
+    console.error('Error fetching cards:', error)
+    return res.status(500).json({ message: 'Failed to fetch cards' })
+  }
+}

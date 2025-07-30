@@ -4,10 +4,10 @@ const { generatePassengerUID } = require('../utils/passengerUidGenerator');
 
 // Register Passenger Controller
 const registerPassenger = async (req, res) => {
-  const { firstName, lastName, email, password } = req.body;
+  const { firstName, lastName, email, password, contactNumber } = req.body;
 
   // Validate required fields
-  if (!firstName || !lastName || !email || !password) {
+  if (!firstName || !lastName || !email || !password || !contactNumber) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -28,6 +28,8 @@ const registerPassenger = async (req, res) => {
       firstName,
       lastName,
       email,
+      contactNumber,
+      balance: 0,
       status: 'active',
       dateOfAccountCreation: currentDate,
     });
@@ -35,7 +37,8 @@ const registerPassenger = async (req, res) => {
     res.status(201).json({
       message: 'Passenger account successfully created',
       uid,
-      systemUid
+      systemUid,
+      contactNumber,
     });
 
   } catch (err) {
@@ -84,8 +87,6 @@ const getPassenger = async (req, res) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
-
-
 
 module.exports = {
   registerPassenger,

@@ -13,6 +13,7 @@ const deviceRoutes = require('./Routes/deviceRoutes');
 const cardRoutes = require('./Routes/cardRoutes');
 const transactionRoutes = require('./Routes/transactionRoutes');
 const passengerRoutes = require('./Routes/passengerRoutes');
+const topUpRoutes = require('./Routes/topUpRoutes');
 
 
 const app = express();
@@ -38,6 +39,7 @@ app.use('/ridepay', deviceRoutes);
 app.use('/ridepay', cardRoutes);
 app.use('/ridepay', transactionRoutes);
 app.use('/ridepay', passengerRoutes);
+app.use('/ridepay', topUpRoutes);
 
 app.listen(3000, () => {
   console.log('🔐 Server running on http://localhost:3000');

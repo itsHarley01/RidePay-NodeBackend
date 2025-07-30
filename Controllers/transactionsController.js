@@ -3,6 +3,109 @@ const db = require('../config/firebase');
 
 const TRANSACTIONS_PATH = 'r1d3p_tr4z_transac';
 
+// Reusable transaction creation logic
+const createTransactionRecord = async ({
+  type,
+  amount,
+  fromUser,
+  ...otherFields
+}) => {
+  if (!type || typeof amount !== 'number' || !fromUser) {
+    throw new Error('Missing required fields: type, amount, and fromUser');
+  }
+
+  const transactionUID = `RP-${Date.now()}`;
+  const date = new Date();
+  const isoDate = date.toISOString();
+  const timestamp = date.getTime();
+
+  const baseTransaction = {
+    type,
+    date: isoDate,
+    timestamp,
+    amount,
+    fromUser,
+  };
+
+  let fullTransaction = { ...baseTransaction };
+
+  switch (type) {
+    case 'bus':
+      const {
+        busId,
+        deviceId,
+        driverId,
+        busPaymentType,
+        busPaymentAmount,
+      } = otherFields;
+
+      if (!busId || !deviceId || !driverId || !busPaymentType || typeof busPaymentAmount !== 'number') {
+        throw new Error('Missing bus transaction fields.');
+      }
+
+      fullTransaction = {
+        ...fullTransaction,
+        busId,
+        deviceId,
+        driverId,
+        busPaymentType,
+        busPaymentAmount,
+      };
+      break;
+
+    case 'topup':
+      const { topupMethod, topUpAmount, topUpFee } = otherFields;
+
+      if (!topupMethod || typeof topUpAmount !== 'number' || typeof topUpFee !== 'number') {
+        throw new Error('Missing top-up transaction fields.');
+      }
+
+      fullTransaction = {
+        ...fullTransaction,
+        topupMethod,
+        topUpAmount,
+        topUpFee,
+      };
+      break;
+
+    case 'card':
+      const {
+        issuedCard,
+        cardPrice,
+        cardIssuanceFee,
+        cardIssuanceLocation,
+      } = otherFields;
+
+      if (
+        !issuedCard ||
+        typeof cardPrice !== 'number' ||
+        typeof cardIssuanceFee !== 'number' ||
+        !cardIssuanceLocation
+      ) {
+        throw new Error('Missing card transaction fields.');
+      }
+
+      fullTransaction = {
+        ...fullTransaction,
+        issuedCard,
+        cardPrice,
+        cardIssuanceFee,
+        cardIssuanceLocation,
+      };
+      break;
+
+    default:
+      throw new Error(`Invalid transaction type: ${type}`);
+  }
+
+  await db.ref(`${TRANSACTIONS_PATH}/${transactionUID}`).set(fullTransaction);
+
+  return {
+    transactionUID,
+    transaction: fullTransaction,
+  };
+};
+
 // Create a new transaction (modular for any type)
 const createTransaction = async (req, res) => {
   try {
@@ -177,5 +280,6 @@ const getTransactions = async (req, res) => {
 
 module.exports = {
   createTransaction,
+  createTransactionRecord,
   getTransactions,
 };
