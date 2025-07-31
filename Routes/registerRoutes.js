@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { registerUser } = require('../controllers/registerController');
+const { registerUser } = require('../Controllers/registerController');
 const { registerDriver } = require('../Controllers/registerDriverController');
 
 router.post('/register', registerUser);
