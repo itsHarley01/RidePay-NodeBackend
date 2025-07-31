@@ -1,6 +1,8 @@
 # Node modules
 node_modules/
 
+# Firebase service account key
+config/ridepay-30fcd-firebase-adminsdk-fbsvc-e03baff7af.json
 
 # Environment variables
 .env
