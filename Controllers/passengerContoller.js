@@ -88,7 +88,32 @@ const getPassenger = async (req, res) => {
   }
 };
 
+// 🔹 New: Get full passenger data by UID
+const getPassengerData = async (req, res) => {
+  const { uid } = req.params;
+
+  if (!uid) {
+    return res.status(400).json({ error: 'Missing UID parameter' });
+  }
+
+  try {
+    const snapshot = await db.ref(`p4zs3gr_usr_uu34/${uid}`).once('value');
+    const data = snapshot.val();
+
+    if (!data) {
+      return res.status(404).json({ error: 'Passenger not found with given UID' });
+    }
+
+    return res.status(200).json({ uid, ...data });
+  } catch (err) {
+    console.error('❌ Error fetching passenger by UID:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
 module.exports = {
   registerPassenger,
   getPassenger,
+  getPassengerData
 };

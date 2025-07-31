@@ -1,5 +1,6 @@
 const db = require('../config/firebase'); 
 const { v4: uuidv4 } = require('uuid');
+const { createTransactionRecord } = require('./transactionsController');
 
 function generateRandomCardId(length = 16) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -12,12 +13,22 @@ function generateRandomCardId(length = 16) {
 
 async function issueCard(req, res) {
   try {
-    const { tagUid, userUid } = req.body;
+    const {
+      tagUid,
+      userUid,
+      cardPrice,
+      cardIssuanceFee,
+      cardIssuanceLocation,
+      amount, // total amount (e.g. price + fee)
+    } = req.body;
 
-    if (!tagUid || !userUid) {
-      return res.status(400).json({ message: 'Missing required fields: tagUid and userUid are required.' });
+    // Validate required fields
+    if (!tagUid || !userUid || typeof cardPrice !== 'number' ||
+        typeof cardIssuanceFee !== 'number' || !cardIssuanceLocation || typeof amount !== 'number') {
+      return res.status(400).json({ message: 'Missing required fields for card issuance transaction.' });
     }
 
+    // Check if tagUid already issued
     const snapshot = await db.ref('k44d_r1g3s_74l')
       .orderByChild('tagUid')
       .equalTo(tagUid)
@@ -30,6 +41,7 @@ async function issueCard(req, res) {
     const cardId = generateRandomCardId();
     const issuanceDate = new Date().toISOString();
 
+    // Save card issuance
     await db.ref(`k44d_r1g3s_74l/${cardId}`).set({
       tagUid,
       userUid,
@@ -37,12 +49,24 @@ async function issueCard(req, res) {
       cardStatus: 'active'
     });
 
+    // Update user record
     await db.ref(`p4zs3gr_usr_uu34/${userUid}`).update({
       cardId
     });
 
+    // 🔹 Record the card issuance transaction
+    await createTransactionRecord({
+      type: 'card',
+      amount,           // total amount (cardPrice + fee)
+      fromUser: userUid,
+      issuedCard: cardId,
+      cardPrice,
+      cardIssuanceFee,
+      cardIssuanceLocation
+    });
+
     return res.status(200).json({
-      message: 'Card issued successfully',
+      message: 'Card issued and transaction recorded successfully',
       cardId,
       tagUid,
       userUid
