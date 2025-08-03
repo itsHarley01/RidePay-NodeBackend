@@ -16,7 +16,6 @@ const transactionRoutes = require('./Routes/transactionRoutes');
 const passengerRoutes = require('./Routes/passengerRoutes');
 const topUpRoutes = require('./Routes/topUpRoutes');
 const busTapRoutes = require('./Routes/busTapRoutes');
-const discountRoutes = require('./Routes/discountRoute');
 
 
 
@@ -34,8 +33,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-
-
 app.use(bodyParser.json());
 
 // Use routes
@@ -52,11 +49,7 @@ app.use('/ridepay', transactionRoutes);
 app.use('/ridepay', passengerRoutes);
 app.use('/ridepay', topUpRoutes);
 app.use('/ridepay', busTapRoutes);
-app.use('/ridepay', discountRoutes);
 
 app.listen(3000, () => {
-  console.log('🔐 Server running on http://localhost:3000');
+  console.log('🔐 Server running on PORT 3000');
 });
-
-// module.exports = app;
-// module.exports.handler = serverless(app); 
