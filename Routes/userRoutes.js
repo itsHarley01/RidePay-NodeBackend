@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { getUserDetails } = require('../controllers/userController');
+const { getUserDetails } = require('../Controllers/userController');
 const { getAllUsers } = require('../Controllers/getAllUsers'); 
 
 // Route to fetch a single user by UID
