@@ -1,17 +1,37 @@
-// Controllers/loginController.js
-
 const jwt = require('jsonwebtoken');
 const { getAuth } = require('firebase-admin/auth');
+const { decrypt } = require('../utils/encrypt');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret'; // keep this in .env
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
 const loginController = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const auth = getAuth();
+    // Check for dev superadmin login first
+    const devEmail = process.env.DEV_SUPERADMIN_EMAIL;
+    const devEncryptedPassword = process.env.DEV_SUPERADMIN_PASSWORD_ENCRYPTED;
+    const devPassword = decrypt(devEncryptedPassword);
 
-    // Try to sign in using Firebase Auth REST API
+    if (email === devEmail && password === devPassword) {
+      const tokenPayload = {
+        email,
+        role: process.env.DEV_SUPERADMIN_ROLE,
+        firstName: process.env.DEV_SUPERADMIN_FIRST_NAME,
+        lastName: process.env.DEV_SUPERADMIN_LAST_NAME,
+        isDev: true,
+      };
+
+      const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '1h' });
+
+      return res.status(200).json({
+        message: 'Dev superadmin login successful',
+        token,
+        ...tokenPayload,
+      });
+    }
+
+    // If not dev, try Firebase Auth login
     const response = await fetch(
       `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.FIREBASE_API_KEY}`,
       {
@@ -33,14 +53,15 @@ const loginController = async (req, res) => {
 
     const uid = data.localId;
 
-    // Generate JWT Token
-    const token = jwt.sign({ uid, email }, JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ uid, email, isDev: false }, JWT_SECRET, { expiresIn: '1h' });
 
     return res.status(200).json({
       message: 'Login successful',
       token,
       uid,
+      email,
     });
+
   } catch (error) {
     console.error('Login error:', error);
     return res.status(500).json({ message: 'Login failed' });
