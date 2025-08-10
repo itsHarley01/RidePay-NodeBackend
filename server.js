@@ -22,17 +22,19 @@ const gpsRoutes = require('./Routes/gpsRoutes');
 
 const app = express();
 
-const allowedOrigins = [
-  'http://localhost:5173',       // Your web app
-  'http://localhost:8081',       // Metro web preview
-  'http://192.168.100.7:8081',   // Expo Go on LAN (check exact IP)
-];
+// const allowedOrigins = [
+//   'http://localhost:5173',       
+//   'http://localhost:8081',       
+//   'http://192.168.100.7:8081',   
+// ];
 
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
+app.options('*', cors());
 
 app.use(bodyParser.json());
 
