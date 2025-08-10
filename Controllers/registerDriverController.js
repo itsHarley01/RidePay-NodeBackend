@@ -12,6 +12,7 @@ const registerDriver = async (req, res) => {
     email,
     contactNumber,
     organization,
+    operatorUnit,
     // bus
   } = req.body;
 
@@ -37,6 +38,7 @@ const registerDriver = async (req, res) => {
       gender,
       email,
       contactNumber,
+      operatorUnit,
       status: {
         dateOfAccountCreation: currentDate,
         status: 'pending'

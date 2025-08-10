@@ -11,6 +11,7 @@ const allowedUpdateFields = [
   'organization',
   'role',
   'email',
+  'operatorUnit' 
 ];
 
 // Helper to fetch user by UID from both tables

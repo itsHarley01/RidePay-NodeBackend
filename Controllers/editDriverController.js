@@ -10,6 +10,7 @@ const allowedUpdateFields = [
   'organization',
   'role',
   'email',
+  'operatorUnit' 
 //   'bus', // specific to drivers
 ];
 

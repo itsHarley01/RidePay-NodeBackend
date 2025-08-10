@@ -12,7 +12,8 @@ const registerUser = async (req, res) => {
     email,
     contactNumber,
     role,
-    organization
+    organization,
+    operatorUnit
   } = req.body;
 
   if (
@@ -37,6 +38,7 @@ const registerUser = async (req, res) => {
       gender,
       email,
       contactNumber,
+      operatorUnit,
       status: {
         dateOfAccountCreation: currentDate,
         status: 'pending'
