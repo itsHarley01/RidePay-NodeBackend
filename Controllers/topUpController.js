@@ -39,6 +39,8 @@ const topUpUserBalance = async (req, res) => {
       topupMethod,
       topUpAmount,
       topUpFee,
+      organization,
+      operatorUnit
     });
 
     return res.status(200).json({

@@ -115,6 +115,8 @@ const createTransaction = async (req, res) => {
       type, // 'bus', 'topup', 'card'
       amount,
       fromUser,
+      organization,
+      operatorUnit,
       ...otherFields
     } = req.body;
 
@@ -136,6 +138,8 @@ const createTransaction = async (req, res) => {
       timestamp,
       amount,
       fromUser,
+      organization,
+      operatorUnit,
     };
 
     let fullTransaction = { ...baseTransaction };
