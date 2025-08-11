@@ -5,7 +5,7 @@ const USERS_PATH = 'p4zs3gr_usr_uu34';
 
 const topUpUserBalance = async (req, res) => {
   try {
-    const { userId, topUpAmount, topUpFee, topupMethod } = req.body;
+    const { userId, topUpAmount, topUpFee, topupMethod, organization } = req.body;
 
     // Validate inputs
     if (!userId || typeof userId !== 'string') {
