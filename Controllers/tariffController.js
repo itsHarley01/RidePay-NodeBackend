@@ -7,25 +7,77 @@ const TARIFF_PATH = 'r1d3-py_d4tts/tariff';
  */
 const updateTariff = async (req, res) => {
   try {
-    const { type, minimumDistance, minimumFee } = req.body;
+    const { type } = req.body;
 
     if (!type || !['distanceBased', 'fixed'].includes(type)) {
-      return res.status(400).json({ message: 'Invalid or missing type. Must be "distanceBased" or "fixed"' });
+      return res.status(400).json({
+        message: 'Invalid or missing type. Must be "distanceBased" or "fixed"'
+      });
     }
 
     const updateData = {};
 
     if (type === 'distanceBased') {
-      if (typeof minimumDistance !== 'string' || typeof minimumFee !== 'string') {
-        return res.status(400).json({ message: 'minimumDistance and minimumFee must be strings for distanceBased' });
+      let { minimumFare, succeedingDistance, succeedingFare } = req.body;
+
+      // Ensure values are numbers (can be zero)
+      if (
+        minimumFare === undefined ||
+        succeedingDistance === undefined ||
+        succeedingFare === undefined
+      ) {
+        return res.status(400).json({
+          message: 'minimumFare, succeedingDistance, and succeedingFare are required for distanceBased'
+        });
       }
-      updateData['distanceBased'] = { minimumDistance, minimumFee };
+
+      // Convert to numbers
+      minimumFare = parseFloat(minimumFare);
+      succeedingDistance = parseFloat(succeedingDistance);
+      succeedingFare = parseFloat(succeedingFare);
+
+      if (
+        isNaN(minimumFare) ||
+        isNaN(succeedingDistance) ||
+        isNaN(succeedingFare)
+      ) {
+        return res.status(400).json({
+          message: 'minimumFare, succeedingDistance, and succeedingFare must be valid numbers'
+        });
+      }
+
+      // Format: fares → 2 decimals, distances → 1 decimal
+      minimumFare = parseFloat(minimumFare.toFixed(2));
+      succeedingDistance = parseFloat(succeedingDistance.toFixed(1));
+      succeedingFare = parseFloat(succeedingFare.toFixed(2));
+
+      updateData['distanceBased'] = {
+        minimumFare,
+        succeedingDistance,
+        succeedingFare
+      };
     }
 
     if (type === 'fixed') {
-      if (typeof minimumFee !== 'string') {
-        return res.status(400).json({ message: 'minimumFee must be a string for fixed' });
+      let { minimumFee } = req.body;
+
+      if (minimumFee === undefined) {
+        return res.status(400).json({
+          message: 'minimumFee is required for fixed'
+        });
       }
+
+      minimumFee = parseFloat(minimumFee);
+
+      if (isNaN(minimumFee)) {
+        return res.status(400).json({
+          message: 'minimumFee must be a valid number'
+        });
+      }
+
+      // Format fare → 2 decimals
+      minimumFee = parseFloat(minimumFee.toFixed(2));
+
       updateData['fixed'] = { minimumFee };
     }
 
