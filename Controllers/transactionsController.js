@@ -9,7 +9,6 @@ const createTransactionRecord = async ({
   amount,
   fromUser,
   organization,
-  operatorUnit,
   ...otherFields
 }) => {
   if (!type || typeof amount !== 'number' || !fromUser) {
@@ -28,7 +27,6 @@ const createTransactionRecord = async ({
     amount,
     fromUser,
     organization,
-    operatorUnit,
   };
 
   let fullTransaction = { ...baseTransaction };
@@ -118,7 +116,6 @@ const createTransaction = async (req, res) => {
       amount,
       fromUser,
       organization,
-      operatorUnit,
       ...otherFields
     } = req.body;
 
@@ -141,7 +138,6 @@ const createTransaction = async (req, res) => {
       amount,
       fromUser,
       organization,
-      operatorUnit,
     };
 
     let fullTransaction = { ...baseTransaction };
