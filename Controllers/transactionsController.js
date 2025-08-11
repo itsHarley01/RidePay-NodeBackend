@@ -8,6 +8,8 @@ const createTransactionRecord = async ({
   type,
   amount,
   fromUser,
+  organization,
+  operatorUnit,
   ...otherFields
 }) => {
   if (!type || typeof amount !== 'number' || !fromUser) {
