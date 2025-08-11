@@ -26,7 +26,7 @@ const createTransactionRecord = async ({
     timestamp,
     amount,
     fromUser,
-    organization: organization,
+    organization
   };
 
   let fullTransaction = { ...baseTransaction };
