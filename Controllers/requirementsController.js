@@ -84,9 +84,36 @@ const deleteRequirement = async (req, res) => {
   }
 };
 
+// ✅ Get ALL requirements (across all categories)
+const getAllRequirements = async (req, res) => {
+  try {
+    const snapshot = await db.ref(REQUIREMENTS_PATH).once('value');
+
+    if (!snapshot.exists()) {
+      return res.status(200).json({});
+    }
+
+    const data = snapshot.val();
+    // The structure stays as { coop: [...], operator: [...], driver: [...] }
+    // Convert nested objects into arrays for each category
+    const formatted = {};
+
+    Object.keys(data).forEach(category => {
+      formatted[category] = Object.values(data[category] || {});
+    });
+
+    res.json(formatted);
+  } catch (error) {
+    console.error('Error fetching all requirements:', error);
+    res.status(500).json({ error: 'Failed to fetch all requirements' });
+  }
+};
+
+
 module.exports = {
   createRequirement,
   getRequirements,
+  getAllRequirements,
   updateRequirement,
   deleteRequirement,
 };
