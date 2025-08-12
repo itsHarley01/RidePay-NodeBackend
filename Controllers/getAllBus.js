@@ -3,7 +3,7 @@ const db = require('../config/firebase');
 // Get All Buses Controller
 const getAllBuses = async (req, res) => {
   try {
-    const snapshot = await db.ref('r1d3-py_d4tts/bus').once('value');
+    const snapshot = await db.ref('r1d3-py_bus').once('value');
     const buses = snapshot.val();
 
     if (!buses) {

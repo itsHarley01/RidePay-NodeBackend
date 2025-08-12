@@ -3,7 +3,7 @@ const db = require('../config/firebase') // This should be the firebase-admin in
 // GET: Fetch card price
 exports.getCardPrice = async (req, res) => {
   try {
-    const snapshot = await db.ref('r1d3-py_d4tts/card/price').once('value')
+    const snapshot = await db.ref('r1d3-py_card/price').once('value')
 
     if (!snapshot.exists()) {
       return res.status(404).json({ message: 'Card price not found' })
@@ -26,7 +26,7 @@ exports.updateCardPrice = async (req, res) => {
   }
 
   try {
-    await db.ref('r1d3-py_d4tts/card').update({ price: price.toString() })
+    await db.ref('r1d3-py_card').update({ price: price.toString() })
     return res.status(200).json({ message: 'Card price updated successfully' })
   } catch (error) {
     console.error('Error updating card price:', error)

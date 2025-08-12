@@ -10,7 +10,7 @@ exports.receiveGpsData = async (req, res) => {
 
     const timestamp = Date.now();
 
-    const refPath = `r1d3-py_d4tts/devices/${deviceId}`;
+    const refPath = `r1d3-py_devices/${deviceId}`;
     await db.ref(refPath).update({
       long,
       lat,
@@ -33,7 +33,7 @@ exports.getGpsData = async (req, res) => {
       return res.status(400).json({ message: "Missing deviceId" });
     }
 
-    const refPath = `r1d3-py_d4tts/devices/${deviceId}`;
+    const refPath = `r1d3-py_devices/${deviceId}`;
     const snapshot = await db.ref(refPath).once("value");
     const data = snapshot.val();
 

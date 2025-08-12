@@ -5,7 +5,7 @@ const getBusById = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const snapshot = await db.ref(`r1d3-py_d4tts/bus/${id}`).once('value');
+    const snapshot = await db.ref(`r1d3-py_bus/${id}`).once('value');
 
     if (!snapshot.exists()) {
       return res.status(404).json({ message: 'Bus not found' });
@@ -25,7 +25,7 @@ const updateBusById = async (req, res) => {
   const updates = req.body;
 
   try {
-    const ref = db.ref(`r1d3-py_d4tts/bus/${id}`);
+    const ref = db.ref(`r1d3-py_bus/${id}`);
     const snapshot = await ref.once('value');
 
     if (!snapshot.exists()) {

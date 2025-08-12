@@ -1,6 +1,6 @@
 const db = require('../config/firebase');
 
-const TARIFF_PATH = 'r1d3-py_d4tts/tariff';
+const TARIFF_PATH = 'r1d3-py_tariff';
 
 /**
  * Update tariff for either distanceBased or fixed tariff type

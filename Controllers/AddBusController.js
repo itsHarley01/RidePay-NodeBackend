@@ -6,7 +6,7 @@ const padNumber = (num) => num.toString().padStart(4, '0');
 // Generate Unique Bus ID
 const generateBusUID = async () => {
   try {
-    const snapshot = await db.ref('r1d3-py_d4tts/bus').once('value');
+    const snapshot = await db.ref('r1d3-py_bus').once('value');
     const buses = snapshot.val() || {};
     const count = Object.keys(buses).length;
     const next = count + 1;
@@ -53,7 +53,7 @@ const addBus = async (req, res) => {
       createdAt: new Date().toISOString(),
     };
 
-    await db.ref(`r1d3-py_d4tts/bus/${busUID}`).set(newBus);
+    await db.ref(`r1d3-py_bus/${busUID}`).set(newBus);
 
     return res.status(201).json({ message: 'Bus added successfully', bus: newBus });
   } catch (error) {

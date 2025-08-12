@@ -1,6 +1,6 @@
 const db = require('../config/firebase');
 
-const SHARES_PATH = 'r1d3-py_d4tts/shares';
+const SHARES_PATH = 'r1d3-py_shares';
 
 /**
  * Update DOTR & Transport Coop Shares

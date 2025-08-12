@@ -15,10 +15,10 @@ async function updateDiscount(type, data) {
 
     const updates = {};
     if (data.rate !== undefined) {
-      updates[`r1d3-py_d4tts/discount/${type}/rate`] = data.rate;
+      updates[`r1d3-py_discount/${type}/rate`] = data.rate;
     }
     if (data.validity !== undefined) {
-      updates[`r1d3-py_d4tts/discount/${type}/validity`] = data.validity;
+      updates[`r1d3-py_discount/${type}/validity`] = data.validity;
     }
 
     await db.ref().update(updates);
@@ -35,7 +35,7 @@ async function updateDiscount(type, data) {
  */
 async function getDiscounts() {
   try {
-    const snapshot = await db.ref('r1d3-py_d4tts/discount').once('value');
+    const snapshot = await db.ref('r1d3-py_discount').once('value');
     const data = snapshot.val();
 
     if (!data) {

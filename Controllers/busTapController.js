@@ -3,8 +3,8 @@ const { createTransactionRecord } = require('./transactionsController');
 
 const CARD_PATH = 'k44d_r1g3s_74l';
 const USER_PATH = 'p4zs3gr_usr_uu34';
-const TARIFF_PATH = 'r1d3-py_d4tts/tariff/fixed/minimumFee';
-const BUS_PATH = 'r1d3-py_d4tts/bus';
+const TARIFF_PATH = 'r1d3-py_tariff/fixed/minimumFee';
+const BUS_PATH = 'r1d3-py_bus';
 
 const tapBus = async (req, res) => {
   try {
