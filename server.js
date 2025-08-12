@@ -17,6 +17,7 @@ const passengerRoutes = require('./Routes/passengerRoutes');
 const topUpRoutes = require('./Routes/topUpRoutes');
 const busTapRoutes = require('./Routes/busTapRoutes');
 const gpsRoutes = require('./Routes/gpsRoutes');
+const discountRoutes = require('./Routes/discountRoute');
 
 
 
@@ -51,6 +52,7 @@ app.use('/ridepay', passengerRoutes);
 app.use('/ridepay', topUpRoutes);
 app.use('/ridepay', busTapRoutes);
 app.use('/ridepay', gpsRoutes);
+app.use('/ridepay', discountRoutes);
 
 app.listen(3000, () => {
   console.log('🔐 Server running on PORT 3000');
