@@ -17,7 +17,7 @@ const serviceAccount = {
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://ridepay-30fcd-default-rtdb.firebaseio.com"
+  databaseURL: "https://acnpgs-44ff9-default-rtdb.firebaseio.com"
 });
 
 const db = admin.database();
