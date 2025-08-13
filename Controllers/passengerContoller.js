@@ -28,6 +28,7 @@ const registerPassenger = async (req, res) => {
       firstName,
       lastName,
       email,
+      discount: false,
       contactNumber,
       balance: 0,
       status: 'active',
