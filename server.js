@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors'); 
 const bodyParser = require('body-parser');
-// const serverless = require('serverless-http');
 const registerRoutes = require('./Routes/registerRoutes');
 const accountRoutes = require('./Routes/accountRoutes');
 const userRoutes = require('./Routes/userRoutes');

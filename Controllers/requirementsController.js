@@ -12,34 +12,44 @@ const createRequirement = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const categoryRef = db.ref(`${REQUIREMENTS_PATH}/${category}`);
-    const newReqRef = categoryRef.push();
+    const newReqRef = db.ref(REQUIREMENTS_PATH).push();
 
-    await newReqRef.set({
-      id: newReqRef.key,
+    const newData = {
+      category,
       name,
       inputType,
-    });
+    };
 
-    res.status(201).json({ message: 'Requirement created', id: newReqRef.key });
+    await newReqRef.set(newData);
+
+    // return the ID separately in the response
+    res.status(201).json({ id: newReqRef.key, ...newData });
   } catch (error) {
     console.error('Error creating requirement:', error);
     res.status(500).json({ error: 'Failed to create requirement' });
   }
 };
 
-// ✅ Get all requirements for a category
+// ✅ Get requirements by category
 const getRequirements = async (req, res) => {
   try {
     const { category } = req.params;
-    const snapshot = await db.ref(`${REQUIREMENTS_PATH}/${category}`).once('value');
+
+    const snapshot = await db
+      .ref(REQUIREMENTS_PATH)
+      .orderByChild('category')
+      .equalTo(category)
+      .once('value');
 
     if (!snapshot.exists()) {
       return res.status(200).json([]);
     }
 
     const data = snapshot.val();
-    const list = Object.values(data);
+    const list = Object.entries(data).map(([id, value]) => ({
+      id,
+      ...value
+    }));
 
     res.json(list);
   } catch (error) {
@@ -48,17 +58,18 @@ const getRequirements = async (req, res) => {
   }
 };
 
-// ✅ Update a requirement
+// ✅ Update requirement by ID
 const updateRequirement = async (req, res) => {
   try {
-    const { category, id } = req.params;
-    const { name, inputType } = req.body;
+    const { id } = req.params;
+    const { category, name, inputType } = req.body;
 
-    if (!name || !inputType) {
+    if (!category || !name || !inputType) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    await db.ref(`${REQUIREMENTS_PATH}/${category}/${id}`).update({
+    await db.ref(`${REQUIREMENTS_PATH}/${id}`).update({
+      category,
       name,
       inputType,
     });
@@ -70,21 +81,17 @@ const updateRequirement = async (req, res) => {
   }
 };
 
-// ✅ Delete a requirement
+// ✅ Delete requirement by ID
 const deleteRequirement = async (req, res) => {
   try {
-    const { category, id } = req.params;
-
-    await db.ref(`${REQUIREMENTS_PATH}/${category}/${id}`).remove();
-
+    const { id } = req.params;
+    await db.ref(`${REQUIREMENTS_PATH}/${id}`).remove();
     res.json({ message: 'Requirement deleted' });
   } catch (error) {
     console.error('Error deleting requirement:', error);
     res.status(500).json({ error: 'Failed to delete requirement' });
   }
 };
-
-
 
 module.exports = {
   createRequirement,

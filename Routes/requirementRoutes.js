@@ -7,9 +7,9 @@ const {
   deleteRequirement,
 } = require('../Controllers/requirementsController');
 
-router.post('/req/:category', createRequirement);
+router.post('/req', createRequirement);
 router.get('/req/:category', getRequirements);
-router.put('/req/:category/:id', updateRequirement);
-router.delete('/req/:category/:id', deleteRequirement);
+router.put('/req/:id', updateRequirement);
+router.delete('/req/:id', deleteRequirement);
 
 module.exports = router;
