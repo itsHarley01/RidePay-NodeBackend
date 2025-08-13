@@ -6,9 +6,9 @@ const REQUIREMENTS_PATH = 'r1d3-py_requirements';
 // ✅ Create a requirement
 const createRequirement = async (req, res) => {
   try {
-    const { category, name, inputType } = req.body;
+    const { category, name, inputType, organization, operatorUnit } = req.body;
 
-    if (!category || !name || !inputType) {
+    if (!category || !name || !inputType || !organization || !operatorUnit) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -18,11 +18,12 @@ const createRequirement = async (req, res) => {
       category,
       name,
       inputType,
+      organization,
+      operatorUnit,
     };
 
     await newReqRef.set(newData);
 
-    // return the ID separately in the response
     res.status(201).json({ id: newReqRef.key, ...newData });
   } catch (error) {
     console.error('Error creating requirement:', error);
@@ -62,9 +63,9 @@ const getRequirements = async (req, res) => {
 const updateRequirement = async (req, res) => {
   try {
     const { id } = req.params;
-    const { category, name, inputType } = req.body;
+    const { category, name, inputType, organization, operatorUnit } = req.body;
 
-    if (!category || !name || !inputType) {
+    if (!category || !name || !inputType || !organization || !operatorUnit) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -72,6 +73,8 @@ const updateRequirement = async (req, res) => {
       category,
       name,
       inputType,
+      organization,
+      operatorUnit,
     });
 
     res.json({ message: 'Requirement updated' });
