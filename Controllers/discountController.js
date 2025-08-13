@@ -1,4 +1,4 @@
-const db = require('../config/firebase');
+const { db } = require('../config/firebase');
 
 /**
  * Update discount settings (rate and/or validity) for a specific discount type

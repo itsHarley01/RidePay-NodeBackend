@@ -1,4 +1,4 @@
-const db = require('../config/firebase'); // This should be the initialized Realtime DB
+const { db } = require('../config/firebase'); // This should be the initialized Realtime DB
 const DEVICE_PATH = 'r1d3-py_devices';
 
 // Helper to generate a custom UID (e.g., DEV-25-0001)

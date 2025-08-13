@@ -1,5 +1,4 @@
-const db = require('../config/firebase');
-
+const { db } = require('../config/firebase');
 // GET: Fetch a bus by UID
 const getBusById = async (req, res) => {
   const { id } = req.params;

@@ -1,6 +1,6 @@
 // accountApproval.js
 require('dotenv').config();
-const db = require('../config/firebase');
+const { db } = require('../config/firebase');
 const nodemailer = require('nodemailer');
 const generateOTP = require("../utils/otpGenerator");
 

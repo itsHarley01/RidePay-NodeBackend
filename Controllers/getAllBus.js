@@ -1,4 +1,4 @@
-const db = require('../config/firebase');
+const { db } = require('../config/firebase');
 
 // Get All Buses Controller
 const getAllBuses = async (req, res) => {

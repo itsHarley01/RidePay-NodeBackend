@@ -1,4 +1,4 @@
-const db = require("../config/firebase");
+const { db } = require('../config/firebase');
 
 function normalize(str = "") {
   return str.toLowerCase().trim();

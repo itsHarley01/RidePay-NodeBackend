@@ -1,4 +1,4 @@
-const db = require('../config/firebase');
+const { db } = require('../config/firebase');
 
 const TARIFF_PATH = 'r1d3-py_tariff';
 

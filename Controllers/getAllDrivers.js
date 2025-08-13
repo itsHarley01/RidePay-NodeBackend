@@ -1,4 +1,4 @@
-const db = require('../config/firebase');
+const { db } = require('../config/firebase');
 
 // ✅ Get all drivers
 const getAllDrivers = async (req, res) => {

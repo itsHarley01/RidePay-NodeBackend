@@ -1,5 +1,4 @@
-const admin = require('firebase-admin');
-const db = admin.database();
+const { db } = require('../config/firebase');
 
 const allowedUpdateFields = [
   'firstName',

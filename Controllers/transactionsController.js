@@ -1,5 +1,5 @@
 // controllers/transactionsController.js
-const db = require('../config/firebase');
+const { db } = require('../config/firebase');
 
 const TRANSACTIONS_PATH = 'r1d3p_tr4z_transac';
 

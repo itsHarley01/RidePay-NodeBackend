@@ -1,4 +1,4 @@
-const db = require('../config/firebase') // This should be the firebase-admin initialized app
+const { db } = require('../config/firebase'); // This should be the firebase-admin initialized app
 
 // GET: Fetch card price
 exports.getCardPrice = async (req, res) => {

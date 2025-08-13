@@ -2,7 +2,7 @@
 
 const jwt = require('jsonwebtoken');
 const fetch = require('node-fetch'); // if not available globally
-const db = require('../config/firebase');
+const { db } = require('../config/firebase');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 

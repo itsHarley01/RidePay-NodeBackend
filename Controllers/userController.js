@@ -1,5 +1,5 @@
 // controllers/userController.js
-const db = require('../config/firebase');
+const { db } = require('../config/firebase');
 
 const getUserDetails = async (req, res) => {
   const { uid } = req.params;

@@ -1,4 +1,4 @@
-const db = require('../config/firebase');
+const { db } = require('../config/firebase');
 const { createTransactionRecord } = require('./transactionsController');
 
 const CARD_PATH = 'k44d_r1g3s_74l';

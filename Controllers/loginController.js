@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { getAuth } = require('firebase-admin/auth');
+const { db } = require('../config/firebase');
 const { decrypt } = require('../utils/encrypt');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
