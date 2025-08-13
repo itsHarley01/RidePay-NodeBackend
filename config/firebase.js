@@ -17,8 +17,11 @@ const serviceAccount = {
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://acnpgs-44ff9-default-rtdb.firebaseio.com"
+  databaseURL: "https://acnpgs-44ff9-default-rtdb.firebaseio.com",
+  storageBucket: "acnpgs-44ff9.appspot.com"
 });
 
 const db = admin.database();
-module.exports = db;
+const bucket = admin.storage().bucket();
+
+module.exports = { db, bucket };
