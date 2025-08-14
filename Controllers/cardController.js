@@ -46,7 +46,6 @@ exports.updateCardPrice = async (req, res) => {
   }
 }
 
-
 // GET: Fetch all issued cards
 exports.getAllCards = async (req, res) => {
   try {
@@ -63,6 +62,7 @@ exports.getAllCards = async (req, res) => {
       dateOfIssuance: card.dateOfIssuance || null,
       tagUid: card.tagUid || null,
       userUid: card.userUid || null,
+      cardType: card.cardType || null,
     }))
 
     return res.status(200).json({ cards: cardsArray })

@@ -146,4 +146,54 @@ async function scanCard(req, res) {
   }
 }
 
-module.exports = { issueCard, scanCard };
+async function issueDriverCard(req, res) {
+  try {
+    const { tagUid, userUid } = req.body;
+
+    // Validate required fields
+    if (!tagUid || !userUid) {
+      return res.status(400).json({ message: 'Missing required fields for driver card issuance.' });
+    }
+
+    // Check if tagUid is already issued
+    const snapshot = await db.ref('k44d_r1g3s_74l')
+      .orderByChild('tagUid')
+      .equalTo(tagUid)
+      .once('value');
+
+    if (snapshot.exists()) {
+      return res.status(409).json({ message: 'This tagUid is already issued to another user.' });
+    }
+
+    const cardId = generateRandomCardId(); // Reuse your existing function
+    const issuanceDate = new Date().toISOString();
+    const cardType = 'driver'; // set driver card type
+
+    // Save card issuance
+    await db.ref(`k44d_r1g3s_74l/${cardId}`).set({
+      tagUid,
+      userUid,
+      cardType,
+      dateOfIssuance: issuanceDate,
+      cardStatus: 'active'
+    });
+
+    // Update user record
+    await db.ref(`r3g1s_user_us3r_4cc5/${userUid}`).update({
+      cardId
+    });
+
+    return res.status(200).json({
+      message: 'Driver card issued successfully',
+      cardId,
+      tagUid,
+      userUid
+    });
+
+  } catch (error) {
+    console.error('issueDriverCard error:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+module.exports = { issueCard, scanCard, issueDriverCard };
