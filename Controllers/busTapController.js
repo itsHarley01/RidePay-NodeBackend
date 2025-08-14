@@ -74,7 +74,7 @@ const tapBus = async (req, res) => {
       deviceId,
       driverId,
       busPaymentType: 'fixed',
-      organization: 'Coop 1', // Adjust as necessary
+      organization: 'Coop 1', 
       busPaymentAmount: minimumFee,
     });
 
