@@ -110,7 +110,38 @@ const getTariff = async (req, res) => {
   }
 };
 
+const setFixedEnabled = async (req, res) => {
+  try {
+    let { fixedEnabled } = req.body;
+
+    if (fixedEnabled === undefined) {
+      return res.status(400).json({
+        message: 'fixedEnabled boolean is required'
+      });
+    }
+
+    // Ensure it's a boolean
+    if (typeof fixedEnabled !== 'boolean') {
+      return res.status(400).json({
+        message: 'fixedEnabled must be a boolean value'
+      });
+    }
+
+    // Check if the path exists; if not, create it
+    const snapshot = await db.ref(TARIFF_PATH).once('value');
+    if (!snapshot.exists()) {
+      await db.ref(TARIFF_PATH).set({ fixed: {}, distanceBased: {} });
+    }
+
+    // Update or create the boolean
+    await db.ref(`${TARIFF_PATH}/fixedEnabled`).set(fixedEnabled);
+
+    return res.status(200).json({
+      message: `fixedEnabled set to ${fixedEnabled}`
+    });
+
 module.exports = {
   updateTariff,
-  getTariff
+  getTariff,
+  setFixedEnabled,
 };
