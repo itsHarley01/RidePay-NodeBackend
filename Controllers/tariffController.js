@@ -130,18 +130,39 @@ const setFixedEnabled = async (req, res) => {
     // Check if the path exists; if not, create it
     const snapshot = await db.ref(TARIFF_PATH).once('value');
     if (!snapshot.exists()) {
-      await db.ref(TARIFF_PATH).set({ fixed: {}, distanceBased: {} });
+      await db.ref(TARIFF_PATH).set({ fixed: {}, distanceBased: {}, fixedEnabled: false });
     }
 
     // Update or create the boolean
     await db.ref(`${TARIFF_PATH}/fixedEnabled`).set(fixedEnabled);
 
+    // Return the current value in response
     return res.status(200).json({
-      message: `fixedEnabled set to ${fixedEnabled}`
+      message: `fixedEnabled set successfully`,
+      fixedEnabled
     });
+
+  } catch (error) {
+    console.error('Error updating fixedEnabled:', error);
+    return res.status(500).json({ message: 'Failed to update fixedEnabled' });
+  }
+};
+
+    const getFixedEnabled = async (req, res) => {
+  try {
+    const snapshot = await db.ref(`${TARIFF_PATH}/fixedEnabled`).once('value')
+    const fixedEnabled = snapshot.exists() ? snapshot.val() : false
+
+    return res.status(200).json({ fixedEnabled })
+  } catch (error) {
+    console.error('Error fetching fixedEnabled:', error)
+    return res.status(500).json({ message: 'Failed to fetch fixedEnabled' })
+  }
+}
 
 module.exports = {
   updateTariff,
   getTariff,
   setFixedEnabled,
-};
+  getFixedEnabled,
+}
