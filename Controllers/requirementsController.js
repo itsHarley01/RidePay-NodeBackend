@@ -8,7 +8,7 @@ const createRequirement = async (req, res) => {
   try {
     const { category, name, inputType, organization, operatorUnit } = req.body;
 
-    if (!category || !name || !inputType || !organization ) {
+    if (!category || !name || !inputType ) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
