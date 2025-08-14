@@ -29,6 +29,7 @@ const addBus = async (req, res) => {
       licensePlate,
       assignedDevice,
       organization,
+      operatorUnit,
       driver,
       status = 'unassigned'
     } = req.body;
@@ -48,6 +49,7 @@ const addBus = async (req, res) => {
       licensePlate,
       assignedDevice: assignedDevice || '',
       organization,
+      operatorUnit,
       driver: driver || 'Not yet assigned',
       status,
       createdAt: new Date().toISOString(),
