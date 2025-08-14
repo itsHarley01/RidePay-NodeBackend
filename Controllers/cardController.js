@@ -18,21 +18,35 @@ exports.getCardPrice = async (req, res) => {
 }
 
 // PUT: Update card price
+// PUT: Update card price
 exports.updateCardPrice = async (req, res) => {
-  const { price } = req.body
+  let { price } = req.body
 
-  if (typeof price === 'undefined') {
+  if (price === undefined) {
     return res.status(400).json({ message: 'Price is required' })
   }
 
+  // Convert to number
+  price = parseFloat(price)
+  if (isNaN(price)) {
+    return res.status(400).json({ message: 'Price must be a valid number' })
+  }
+
+  // Format to 2 decimals
+  price = parseFloat(price.toFixed(2))
+
   try {
-    await db.ref('r1d3-py_card').update({ price: price.toString() })
-    return res.status(200).json({ message: 'Card price updated successfully' })
+    await db.ref('r1d3-py_card').update({ price: price })
+    return res.status(200).json({
+      message: 'Card price updated successfully',
+      price
+    })
   } catch (error) {
     console.error('Error updating card price:', error)
     return res.status(500).json({ message: 'Failed to update card price' })
   }
 }
+
 
 // GET: Fetch all issued cards
 exports.getAllCards = async (req, res) => {
