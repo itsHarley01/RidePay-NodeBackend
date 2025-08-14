@@ -6,6 +6,20 @@ const USER_PATH = 'p4zs3gr_usr_uu34';
 const TARIFF_PATH = 'r1d3-py_tariff/fixed/minimumFee';
 const BUS_PATH = 'r1d3-py_bus';
 const DRIVER_PATH = 'r3g1s_user_us3r_4cc5';
+const DISTANCE_TARIFF_PATH = 'r1d3-py_tariff/distanceBased';
+
+// Haversine formula
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Earth radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(lat1 * Math.PI / 180) *
+            Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // in km
+}
 
 const tapBus = async (req, res) => {
   try {
@@ -169,5 +183,97 @@ const driverBusTap = async (req, res) => {
   }
 };
 
+const distanceBasedBusTap = async (req, res) => {
+  try {
+    const { tagUid, cardId, busId, deviceId, lat, long } = req.body;
 
-module.exports = { tapBus, driverBusTap };
+    if (!tagUid || !cardId || !busId || !deviceId || lat == null || long == null) {
+      return res.status(400).json({ success: false, message: 'Missing required fields.' });
+    }
+
+    // Step 1: Validate card
+    const cardSnap = await db.ref(`${CARD_PATH}/${cardId}`).get();
+    if (!cardSnap.exists()) return res.status(404).json({ success: false, message: 'Card ID not found.' });
+    const cardData = cardSnap.val();
+    if (cardData.tagUid !== tagUid) return res.status(403).json({ success: false, message: 'Tag UID mismatch.' });
+    const userUid = cardData.userUid;
+    if (!userUid) return res.status(404).json({ success: false, message: 'User UID not linked to card.' });
+
+    // Step 2: Check if already tapped (tap-in exists)
+    const tappedSnap = await db.ref(`${USER_PATH}/${userUid}/tapped`).get();
+
+    if (!tappedSnap.exists()) {
+      // TAP-IN
+      await db.ref(`${USER_PATH}/${userUid}/tapped`).set({
+        timestamp: new Date().toISOString(),
+        lat,
+        long,
+        busId,
+        deviceId
+      });
+      return res.status(200).json({ success: true, message: 'Tap-in recorded successfully.' });
+
+    } else {
+      // TAP-OUT
+      const tapInData = tappedSnap.val();
+      const distance = calculateDistance(tapInData.lat, tapInData.long, lat, long);
+
+      // Get tariff
+      const tariffSnap = await db.ref(DISTANCE_TARIFF_PATH).get();
+      const { minimumFare, succeedingDistance, succeedingFare } = tariffSnap.val();
+
+      // Compute fare
+      let fare = Number(minimumFare);
+      if (distance > succeedingDistance) {
+        const extraKm = Math.ceil((distance - succeedingDistance) / succeedingDistance);
+        fare += extraKm * Number(succeedingFare);
+      }
+
+      // Check balance
+      const balanceSnap = await db.ref(`${USER_PATH}/${userUid}/balance`).get();
+      const balance = balanceSnap.val();
+      if (balance < fare) return res.status(402).json({ success: false, message: 'Insufficient balance.' });
+
+      // Get driver
+      const busSnap = await db.ref(`${BUS_PATH}/${busId}/driver`).get();
+      const driverId = busSnap.val();
+
+      // Deduct balance
+      await db.ref(`${USER_PATH}/${userUid}/balance`).set(balance - fare);
+
+      // Record transaction
+      await createTransactionRecord({
+        type: 'bus',
+        amount: fare,
+        fromUser: userUid,
+        busId,
+        deviceId,
+        driverId,
+        busPaymentType: 'distanceBased',
+        organization: 'Coop1',
+        operatorUnit: 'Operator 1',
+        busPaymentAmount: minimumFare,
+        succeedingDistance,
+        tapIn: tapInData,
+        tapOut: { lat, long, timestamp: new Date().toISOString() }
+      });
+
+      // Remove tap-in data
+      await db.ref(`${USER_PATH}/${userUid}/tapped`).remove();
+
+      return res.status(200).json({
+        success: true,
+        message: 'Fare deducted and transaction recorded.',
+        distance: distance.toFixed(2),
+        fare,
+        newBalance: balance - fare
+      });
+    }
+
+  } catch (error) {
+    console.error('Distance-based bus tap error:', error);
+    return res.status(500).json({ success: false, message: 'Server error.', error: error.message });
+  }
+};
+
+module.exports = { tapBus, driverBusTap, distanceBasedBusTap };
