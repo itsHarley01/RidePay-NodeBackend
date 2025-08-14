@@ -1,4 +1,4 @@
-const db = require('../config/firebase');
+const { db } = require('../config/firebase');
 
 // Helper to pad number to 6 digits
 const padNumber = (num) => num.toString().padStart(6, '0');

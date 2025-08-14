@@ -1,4 +1,4 @@
-const db = require('../config/firebase');
+const { db } = require('../config/firebase');
 
 // Helper to format number as 6-digit with leading zeros
 const padNumber = (num) => num.toString().padStart(6, '0');
