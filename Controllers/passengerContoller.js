@@ -23,7 +23,7 @@ const registerPassenger = async (req, res) => {
     const currentDate = new Date().toISOString();
 
     // Save to Realtime Database
-    await db.ref(`p4zs3gr_usr_uu34/${uid}`).set({
+    await set(ref(db,`p4zs3gr_usr_uu34/${uid}`),{
       systemUid,
       firstName,
       lastName,

@@ -29,7 +29,7 @@ const registerDriver = async (req, res) => {
   const currentDate = new Date().toISOString();
 
   try {
-    await db.ref(`user_us3r_4cc5/${uid}`).set({
+    await set(ref(db, `user_us3r_4cc5/${uid}`), {
       systemUid,
       firstName,
       lastName,
@@ -45,7 +45,7 @@ const registerDriver = async (req, res) => {
       },
       role: 'driver',
       organization,
-    //   bus
+    
     });
 
     res.status(201).json({
