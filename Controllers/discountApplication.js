@@ -83,4 +83,28 @@ const createDiscountApplication = async (req, res) => {
     }
 };
 
-module.exports = { createDiscountApplication };
+const getAllDiscountApplication = async (req, res) => {
+    try {
+        const snapshot = await db.ref(`41scnnt_4p41ica80`).once('value');
+
+        if (!snapshot.exists()) {
+            return res.status(404).json({ message: "No discount applications found" });
+        }
+
+        const applications = snapshot.val();
+
+        // Convert object to array for easier frontend table display
+        const result = Object.entries(applications).map(([id, data]) => ({
+            id,
+            ...data
+        }));
+
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error("Error fetching discount applications:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+
+module.exports = { createDiscountApplication, getAllDiscountApplication  };
