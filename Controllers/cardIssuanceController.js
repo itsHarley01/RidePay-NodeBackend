@@ -20,6 +20,7 @@ async function issueCard(req, res) {
       cardPrice,
       cardIssuanceFee,
       cardIssuanceLocation,
+      organization,
       amount,
     } = req.body;
 
@@ -64,6 +65,7 @@ async function issueCard(req, res) {
       issuedCard: cardId,
       cardPrice,
       cardIssuanceFee,
+      organization,
       cardIssuanceLocation
     });
 
