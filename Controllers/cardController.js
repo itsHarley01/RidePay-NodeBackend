@@ -18,7 +18,6 @@ exports.getCardPrice = async (req, res) => {
 }
 
 // PUT: Update card price
-// PUT: Update card price
 exports.updateCardPrice = async (req, res) => {
   let { price } = req.body
 
