@@ -5,6 +5,7 @@ const CARD_PATH = 'k44d_r1g3s_74l';
 const USER_PATH = 'p4zs3gr_usr_uu34';
 const TARIFF_PATH = 'r1d3-py_tariff/fixed/minimumFee';
 const BUS_PATH = 'r1d3-py_bus';
+const DRIVER_PATH = 'r3g1s_user_us3r_4cc5';
 
 const tapBus = async (req, res) => {
   try {
@@ -90,4 +91,83 @@ const tapBus = async (req, res) => {
   }
 };
 
-module.exports = { tapBus };
+const driverBusTap = async (req, res) => {
+  try {
+    const { tagUid, cardId, busId } = req.body;
+
+    if (!tagUid || !cardId || !busId) {
+      return res.status(400).json({ success: false, message: 'Missing required fields.' });
+    }
+
+    // Step 1: Validate cardId and tagUid
+    const cardSnap = await db.ref(`${CARD_PATH}/${cardId}`).get();
+    if (!cardSnap.exists()) {
+      return res.status(404).json({ success: false, message: 'Card ID not found.' });
+    }
+
+    const cardData = cardSnap.val();
+    if (cardData.tagUid !== tagUid) {
+      return res.status(403).json({ success: false, message: 'Tag UID mismatch.' });
+    }
+
+    const userUid = cardData.userUid;
+    if (!userUid) {
+      return res.status(404).json({ success: false, message: 'User UID not linked to card.' });
+    }
+
+    // Step 2: Get bus driver info
+    const busSnap = await db.ref(`${BUS_PATH}/${busId}/driver`).get();
+    if (!busSnap.exists()) {
+      return res.status(404).json({ success: false, message: 'Bus not found.' });
+    }
+
+    const currentDriver = busSnap.val();
+    const now = new Date().toISOString(); // Current datetime
+
+    // Step 3: Determine login or logout
+    if (currentDriver === 'Not yet assigned') {
+      // LOGIN flow
+      await db.ref(`${BUS_PATH}/${busId}/driver`).set(userUid);
+      await db.ref(`${DRIVER_PATH}/${userUid}/log`).push({
+        login: now
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Driver signed in successfully.',
+        action: 'login',
+        driverId: userUid,
+        busId
+      });
+
+    } else if (currentDriver === userUid) {
+      // LOGOUT flow
+      await db.ref(`${BUS_PATH}/${busId}/driver`).set('Not yet assigned');
+      await db.ref(`${DRIVER_PATH}/${userUid}/log`).push({
+        logout: now
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Driver signed out successfully.',
+        action: 'logout',
+        driverId: userUid,
+        busId
+      });
+
+    } else {
+      // Another driver is assigned to this bus
+      return res.status(403).json({
+        success: false,
+        message: 'Another driver is currently assigned to this bus.'
+      });
+    }
+
+  } catch (error) {
+    console.error('Driver bus tap error:', error);
+    return res.status(500).json({ success: false, message: 'Server error.', error: error.message });
+  }
+};
+
+
+module.exports = { tapBus, driverBusTap };
