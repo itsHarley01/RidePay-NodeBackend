@@ -15,11 +15,12 @@ async function issueCard(req, res) {
   try {
     const {
       tagUid,
+      cardType,
       userUid,
       cardPrice,
       cardIssuanceFee,
       cardIssuanceLocation,
-      amount, // total amount (e.g. price + fee)
+      amount,
     } = req.body;
 
     // Validate required fields
@@ -45,6 +46,7 @@ async function issueCard(req, res) {
     await db.ref(`k44d_r1g3s_74l/${cardId}`).set({
       tagUid,
       userUid,
+      cardType,
       dateOfIssuance: issuanceDate,
       cardStatus: 'active'
     });
