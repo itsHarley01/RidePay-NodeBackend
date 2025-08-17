@@ -16,15 +16,15 @@ const updateShares = async (req, res) => {
       cardDotrShare,
     } = req.body;
 
-    // validate: all must be strings (you can change to numbers if needed)
     const fields = { dotrShare, coopShare, operatorShare, driverShare, cardCoopShare, cardDotrShare };
-    for (const [key, value] of Object.entries(fields)) {
-      if (value !== undefined && typeof value !== 'string') {
-        return res.status(400).json({ message: `${key} must be a string` });
-      }
-    }
 
-    // only update fields that were provided
+    // remove undefined to avoid Firebase error
+    Object.keys(fields).forEach((key) => {
+      if (fields[key] === undefined) {
+        delete fields[key];
+      }
+    });
+
     await db.ref(SHARES_PATH).update(fields);
 
     return res.status(200).json({ message: 'Shares updated successfully' });
@@ -33,6 +33,7 @@ const updateShares = async (req, res) => {
     return res.status(500).json({ message: 'Failed to update shares' });
   }
 };
+
 
 /**
  * Get all Shares
