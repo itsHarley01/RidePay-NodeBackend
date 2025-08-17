@@ -3,48 +3,34 @@ const { db } = require('../config/firebase');
 const SHARES_PATH = 'r1d3-py_shares';
 
 /**
- * Update DOTR & Transport Coop Shares
+ * Update all shares (DOTR, Coop, Operator, Driver, CardCoop, CardDOTR)
  */
-const updateMainShares = async (req, res) => {
+const updateShares = async (req, res) => {
   try {
-    const { dotrShare, coopShare } = req.body;
-
-    if (typeof dotrShare !== 'string' || typeof coopShare !== 'string') {
-      return res.status(400).json({ message: 'dotrShare and coopShare must be strings' });
-    }
-
-    await db.ref(SHARES_PATH).update({
+    const {
       dotrShare,
       coopShare,
-    });
-
-    return res.status(200).json({ message: 'DOTR and Coop shares updated successfully' });
-  } catch (error) {
-    console.error('Error updating main shares:', error);
-    return res.status(500).json({ message: 'Failed to update main shares' });
-  }
-};
-
-/**
- * Update Transport Operator & Driver Shares
- */
-const updateOperatorShares = async (req, res) => {
-  try {
-    const { operatorShare, driverShare } = req.body;
-
-    if (typeof operatorShare !== 'string' || typeof driverShare !== 'string') {
-      return res.status(400).json({ message: 'operatorShare and driverShare must be strings' });
-    }
-
-    await db.ref(SHARES_PATH).update({
       operatorShare,
       driverShare,
-    });
+      cardCoopShare,
+      cardDotrShare,
+    } = req.body;
 
-    return res.status(200).json({ message: 'Operator and Driver shares updated successfully' });
+    // validate: all must be strings (you can change to numbers if needed)
+    const fields = { dotrShare, coopShare, operatorShare, driverShare, cardCoopShare, cardDotrShare };
+    for (const [key, value] of Object.entries(fields)) {
+      if (value !== undefined && typeof value !== 'string') {
+        return res.status(400).json({ message: `${key} must be a string` });
+      }
+    }
+
+    // only update fields that were provided
+    await db.ref(SHARES_PATH).update(fields);
+
+    return res.status(200).json({ message: 'Shares updated successfully' });
   } catch (error) {
-    console.error('Error updating operator shares:', error);
-    return res.status(500).json({ message: 'Failed to update operator shares' });
+    console.error('Error updating shares:', error);
+    return res.status(500).json({ message: 'Failed to update shares' });
   }
 };
 
@@ -69,6 +55,5 @@ const getShares = async (req, res) => {
 
 module.exports = {
   getShares,
-  updateMainShares,
-  updateOperatorShares,
+  updateShares,
 };

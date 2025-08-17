@@ -1,19 +1,15 @@
 const express = require('express');
 const {
   getShares,
-  updateMainShares,
-  updateOperatorShares,
+  updateShares,
 } = require('../Controllers/sharePercentage'); // renamed handlers
 
 const router = express.Router();
 
 // Fetch all shares
 router.get('/shares', getShares);
-
 // Update DOTR & Coop shares
-router.put('/shares/main', updateMainShares);
+router.put('/shares', updateShares);
 
-// Update Operator & Driver shares
-router.put('/shares/operator', updateOperatorShares);
 
 module.exports = router;
