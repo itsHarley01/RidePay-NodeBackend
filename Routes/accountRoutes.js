@@ -1,4 +1,5 @@
 const express = require("express");
+const multer = require("multer");
 const router = express.Router();
 const approveAccount = require("../Controllers/accountApproval");
 const verifyAccountActivation = require("../Controllers/verifyAccountActivation");
@@ -8,7 +9,9 @@ const { getDriverDetails, updateDriverDetails } = require("../Controllers/editDr
 const { getAllDrivers, getDriverById } = require('../Controllers/getAllDrivers');
 const { sendPasswordReset } = require("../Controllers/sendPasswordResetController");
 
-router.patch("/approve-account/:uid", approveAccount);
+const upload = multer({ storage: multer.memoryStorage() });
+
+router.patch("/approve-account/:uid", upload.array("files"), approveAccount);
 router.post("/verify-account", verifyAccountActivation);
 router.post("/register-final-account", registerActivatedAccount);
 
