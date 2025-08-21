@@ -264,7 +264,7 @@ const getTransactions = async (req, res) => {
 
     // Optional filtering
     transactionsArray = transactionsArray.filter((txn) => {
-      const ts = txn.timestamp || 0;
+      const ts = txn.timestamp || new Date(txn.date).getTime();
 
       // timestamp range
       if (startTimestamp && ts < Number(startTimestamp)) return false;
