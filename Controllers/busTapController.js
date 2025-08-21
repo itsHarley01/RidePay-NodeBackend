@@ -113,7 +113,7 @@ const driverBusTap = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Missing required fields.' });
     }
 
-    // Step 1: Validate cardId and tagUid
+    // Validate cardId and tagUid
     const cardSnap = await db.ref(`${CARD_PATH}/${cardId}`).get();
     if (!cardSnap.exists()) {
       return res.status(404).json({ success: false, message: 'Card ID not found.' });
@@ -129,7 +129,7 @@ const driverBusTap = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User UID not linked to card.' });
     }
 
-    // Step 2: Get bus driver info
+    // Get bus driver info
     const busSnap = await db.ref(`${BUS_PATH}/${busId}/driver`).get();
     if (!busSnap.exists()) {
       return res.status(404).json({ success: false, message: 'Bus not found.' });
@@ -138,13 +138,15 @@ const driverBusTap = async (req, res) => {
     const currentDriver = busSnap.val();
     const now = new Date().toISOString(); // Current datetime
 
-    // Step 3: Determine login or logout
+    const logRef = db.ref(`${DRIVER_PATH}/${userUid}/log`);
+
     if (currentDriver === 'Not yet assigned') {
       // LOGIN flow
       await db.ref(`${BUS_PATH}/${busId}/driver`).set(userUid);
-      await db.ref(`${DRIVER_PATH}/${userUid}/log`).push({
-        login: now
-      });
+
+      // Create a new log entry
+      const newLogRef = logRef.push();
+      await newLogRef.set({ login: now });
 
       return res.status(200).json({
         success: true,
@@ -157,9 +159,21 @@ const driverBusTap = async (req, res) => {
     } else if (currentDriver === userUid) {
       // LOGOUT flow
       await db.ref(`${BUS_PATH}/${busId}/driver`).set('Not yet assigned');
-      await db.ref(`${DRIVER_PATH}/${userUid}/log`).push({
-        logout: now
+
+      // Find the last log entry with no logout
+      const logSnap = await logRef.orderByKey().limitToLast(1).get();
+      let lastLogKey = null;
+
+      logSnap.forEach((child) => {
+        lastLogKey = child.key;
       });
+
+      if (lastLogKey) {
+        await logRef.child(lastLogKey).update({ logout: now });
+      } else {
+        // If no log exists, create one with logout (edge case)
+        await logRef.push({ logout: now });
+      }
 
       return res.status(200).json({
         success: true,
