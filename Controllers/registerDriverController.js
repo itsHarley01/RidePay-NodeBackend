@@ -13,13 +13,14 @@ const registerDriver = async (req, res) => {
     contactNumber,
     organization,
     operatorUnit,
+    license
     // bus
   } = req.body;
 
   // Validate required fields
   if (
     !firstName || !lastName || !birthdate || !gender ||
-    !email || !contactNumber || !organization 
+    !email || !contactNumber || !organization || !license
   ) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
@@ -45,7 +46,7 @@ const registerDriver = async (req, res) => {
       },
       role: 'driver',
       organization,
-    //   bus
+      license,
     });
 
     res.status(201).json({
