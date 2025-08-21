@@ -15,12 +15,15 @@ const uploadRequirement = async (uid, files) => {
     }
 
     const uploadPromises = files.map(async (file) => {
-75
+      // Generate unique file name
+      const randomName = `${uuidv4()}${path.extname(file.originalname)}`;
+      // Place file inside a folder for this UID
+      const destination = `user-requirements/${uid}/${randomName}`;
 
       // Upload to Firebase Storage
       await bucket.file(destination).save(file.buffer, {
         contentType: file.mimetype,
-        public: true, // not enough alone, need to make public explicitly
+        public: true, // <-- note: not enough alone, need to call makePublic()
         metadata: {
           firebaseStorageDownloadTokens: uuidv4(),
         },
