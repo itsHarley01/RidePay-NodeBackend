@@ -237,11 +237,11 @@ const createTransaction = async (req, res) => {
 
 const getTransactions = async (req, res) => {
   try {
-    const { type, fromUser, startTimestamp, endTimestamp } = req.query;
+    const { type, fromUser, startTimestamp, endTimestamp, driverId, busId } = req.query;
 
     let ref = db.ref(TRANSACTIONS_PATH);
 
-    // Apply filters
+    // Filter by type or fromUser or timestamp
     if (type) {
       ref = ref.orderByChild('type').equalTo(type);
     } else if (fromUser) {
@@ -262,15 +262,22 @@ const getTransactions = async (req, res) => {
       ...details,
     }));
 
-    // Optional timestamp range filtering (backend-side)
-    if (startTimestamp || endTimestamp) {
-      transactionsArray = transactionsArray.filter((txn) => {
-        const ts = txn.timestamp || 0;
-        if (startTimestamp && ts < Number(startTimestamp)) return false;
-        if (endTimestamp && ts > Number(endTimestamp)) return false;
-        return true;
-      });
-    }
+    // Optional filtering
+    transactionsArray = transactionsArray.filter((txn) => {
+      const ts = txn.timestamp || 0;
+
+      // timestamp range
+      if (startTimestamp && ts < Number(startTimestamp)) return false;
+      if (endTimestamp && ts > Number(endTimestamp)) return false;
+
+      // driverId filter (only if provided)
+      if (driverId && txn.driverId !== driverId) return false;
+
+      // busId filter (only if provided)
+      if (busId && txn.busId !== busId) return false;
+
+      return true;
+    });
 
     return res.status(200).json(transactionsArray);
   } catch (error) {
