@@ -36,7 +36,9 @@ const uploadRequirement = async (uid, files) => {
       const publicUrl = `https://storage.googleapis.com/${bucket.name}/${destination}`;
 
       // Save to Firebase Realtime Database
-      const ref = db.ref(`user_us3r_4cc5/${uid}/files/${randomName}`);
+      const saveToDbKey = file.fieldname; 
+
+      const ref = db.ref(`user_us3r_4cc5/${uid}/files/${saveToDbKey}`);
       await ref.set({
         url: publicUrl,
         name: file.originalname,

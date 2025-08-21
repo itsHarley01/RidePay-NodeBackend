@@ -12,9 +12,9 @@ async function generateDeviceUID() {
 // 📌 Add new device
 const addDevice = async (req, res) => {
   try {
-    const { deviceName, macAddress, status } = req.body;
+    const { deviceName, status } = req.body;
 
-    if (!deviceName || !macAddress || !status) {
+    if (!deviceName || !status) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
@@ -22,7 +22,6 @@ const addDevice = async (req, res) => {
     const newDevice = {
       deviceUID,
       deviceName,
-      macAddress,
       status,
       createdAt: new Date().toISOString(),
     };
