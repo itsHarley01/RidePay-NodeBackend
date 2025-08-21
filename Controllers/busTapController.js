@@ -146,7 +146,7 @@ const driverBusTap = async (req, res) => {
 
       // Create a new log entry
       const newLogRef = logRef.push();
-      await newLogRef.set({ login: now });
+      await newLogRef.set({ busId, login: now });
 
       return res.status(200).json({
         success: true,
