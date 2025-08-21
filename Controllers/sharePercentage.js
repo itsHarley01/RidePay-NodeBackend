@@ -14,9 +14,10 @@ const updateShares = async (req, res) => {
       driverShare,
       cardCoopShare,
       cardDotrShare,
+      cardMaintinanceShare,
     } = req.body;
 
-    const fields = { dotrShare, coopShare, operatorShare, driverShare, cardCoopShare, cardDotrShare };
+    const fields = { dotrShare, coopShare, operatorShare, driverShare, cardCoopShare, cardDotrShare, cardMaintinanceShare };
 
     // remove undefined to avoid Firebase error
     Object.keys(fields).forEach((key) => {
