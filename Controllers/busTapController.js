@@ -269,8 +269,10 @@ const distanceBasedBusTap = async (req, res) => {
         operatorUnit: 'Operator 1',
         busPaymentAmount: minimumFare,
         succeedingDistance,
+        succeedingFare,
         tapIn: tapInData,
-        tapOut: { lat, long, timestamp: new Date().toISOString() }
+        tapOut: { lat, long, timestamp: new Date().toISOString() },
+        distance
       });
 
       // Remove tap-in data
