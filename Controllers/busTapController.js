@@ -272,7 +272,7 @@ const distanceBasedBusTap = async (req, res) => {
         succeedingFare,
         tapIn: tapInData,
         tapOut: { lat, long, timestamp: new Date().toISOString() },
-        distance
+        distance: distance.toFixed(2),
       });
 
       // Remove tap-in data
