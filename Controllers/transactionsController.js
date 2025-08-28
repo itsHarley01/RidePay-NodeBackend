@@ -45,6 +45,20 @@ const createTransactionRecord = async ({
         throw new Error('Missing bus transaction fields.');
       }
 
+      const optionalKeys = [
+        'succeedingDistance',
+        'succeedingFare',
+        'tapIn',
+        'tapOut',
+        'distance',
+        'operatorUnit',
+      ];
+
+      const optionalData = {};
+      optionalKeys.forEach(k => {
+        if (otherFields[k] !== undefined) optionalData[k] = otherFields[k];
+      });
+
       fullTransaction = {
         ...fullTransaction,
         busId,

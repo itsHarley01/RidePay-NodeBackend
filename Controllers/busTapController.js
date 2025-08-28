@@ -91,6 +91,7 @@ const tapBus = async (req, res) => {
       busPaymentType: 'fixed',
       organization: 'Coop 1', 
       busPaymentAmount: minimumFee,
+      
     });
 
     return res.status(200).json({
