@@ -66,6 +66,7 @@ const createTransactionRecord = async ({
         driverId,
         busPaymentType,
         busPaymentAmount,
+        ...optionalData
       };
       break;
 
