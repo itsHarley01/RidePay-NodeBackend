@@ -27,7 +27,7 @@ const registerPassenger = async (req, res) => {
       systemUid,
       firstName,
       lastName,
-      middleName,
+      middleName: middleName || '',
       email,
       discount: false,
       contactNumber,
