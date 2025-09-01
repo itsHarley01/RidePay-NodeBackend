@@ -17,11 +17,20 @@ const sendUserOtp = async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'Email is required' });
 
+    const existingUserSnap = await db.ref("p4zs3gr_usr_uu34")
+      .orderByChild("email")
+      .equalTo(email)
+      .once("value");
+
+    if (existingUserSnap.exists()) {
+      return res.status(400).json({ error: "Email is already in use" });
+    }
+
     // Generate 4-char OTP
     const otp = generateOTP(4);
 
     // Generate random ID
-    const newOtpRef = db.ref('temp-user-otp').push();
+    const newOtpRef = db.ref("temp-user-otp").push();
     await newOtpRef.set({
       email,
       otp,
@@ -32,7 +41,7 @@ const sendUserOtp = async (req, res) => {
     const mailOptions = {
       from: process.env.SMTP_USER,
       to: email,
-      subject: 'Your Verification Code',
+      subject: "Your Verification Code",
       html: `
         <h2>Email Verification</h2>
         <p>Your OTP code is:</p>
@@ -43,12 +52,13 @@ const sendUserOtp = async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
-    return res.json({ success: true, message: 'OTP sent to email' });
+    return res.json({ success: true, message: "OTP sent to email" });
   } catch (error) {
-    console.error('Error sending OTP:', error);
-    return res.status(500).json({ error: 'Failed to send OTP' });
+    console.error("Error sending OTP:", error);
+    return res.status(500).json({ error: "Failed to send OTP" });
   }
 };
+
 
 // 2. Verify OTP
 const verifyUserOtp = async (req, res) => {
