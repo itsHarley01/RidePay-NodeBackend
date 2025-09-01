@@ -4,7 +4,7 @@ const { generatePassengerUID } = require('../utils/passengerUidGenerator');
 
 // Register Passenger Controller
 const registerPassenger = async (req, res) => {
-  const { firstName, lastName, email, password, contactNumber } = req.body;
+  const { firstName, lastName, middleName, email, password, contactNumber } = req.body;
 
   // Validate required fields
   if (!firstName || !lastName || !email || !password || !contactNumber) {
@@ -27,6 +27,7 @@ const registerPassenger = async (req, res) => {
       systemUid,
       firstName,
       lastName,
+      middleName,
       email,
       discount: false,
       contactNumber,
