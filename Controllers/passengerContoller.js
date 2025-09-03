@@ -126,7 +126,7 @@ const editPassengerProfile = async (req, res) => {
   const updateData = {};
   if (firstName !== undefined) updateData.firstName = firstName;
   if (lastName !== undefined) updateData.lastName = lastName;
-  if (middleName !== undefined) updateData.middleName = middleName;
+  if (middleName !== undefined) updateData.middleName = middleName || "";
   if (contactNumber !== undefined) updateData.contactNumber = contactNumber;
 
   if (Object.keys(updateData).length === 0) {
