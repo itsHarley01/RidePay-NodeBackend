@@ -8,6 +8,6 @@ router.get('/passengers', getPassenger);
 router.get('/passengers', getPassenger);
 router.get('/passengers/user/:uid', getPassengerData);
 router.post('/passengers/login', loginPassengerController);
-router.post('/passengers/edit/:uid', editPassengerProfile);
+router.put('/passengers/edit/:uid', editPassengerProfile);
 
 module.exports = router;
