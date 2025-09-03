@@ -113,9 +113,50 @@ const getPassengerData = async (req, res) => {
   }
 };
 
+// Edit Passenger Profile
+const editPassengerProfile = async (req, res) => {
+  const { uid } = req.params;
+  const { firstName, lastName, middleName, contactNumber } = req.body;
+
+  if (!uid) {
+    return res.status(400).json({ error: 'Missing UID parameter' });
+  }
+
+  // Build update object with only provided allowed fields
+  const updateData = {};
+  if (firstName !== undefined) updateData.firstName = firstName;
+  if (lastName !== undefined) updateData.lastName = lastName;
+  if (middleName !== undefined) updateData.middleName = middleName;
+  if (contactNumber !== undefined) updateData.contactNumber = contactNumber;
+
+  if (Object.keys(updateData).length === 0) {
+    return res.status(400).json({ error: 'No valid fields provided to update' });
+  }
+
+  try {
+    const passengerRef = db.ref(`p4zs3gr_usr_uu34/${uid}`);
+    const snapshot = await passengerRef.once('value');
+
+    if (!snapshot.exists()) {
+      return res.status(404).json({ error: 'Passenger not found' });
+    }
+
+    await passengerRef.update(updateData);
+
+    return res.status(200).json({
+      message: 'Passenger profile updated successfully',
+      uid,
+      updatedFields: updateData
+    });
+  } catch (err) {
+    console.error('❌ Error updating passenger profile:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
 
 module.exports = {
   registerPassenger,
   getPassenger,
-  getPassengerData
+  getPassengerData,
+  editPassengerProfile
 };
