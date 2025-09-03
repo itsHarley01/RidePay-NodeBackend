@@ -61,17 +61,34 @@ const sendPasswordReset = async (req, res) => {
     const resetLink = await admin.auth().generatePasswordResetLink(email);
 
     // 📧 Send the email using Nodemailer
-    await transporter.sendMail({
-      from: `"Your App Name" <${process.env.SMTP_USER}>`,
-      to: email,
-      subject: 'Reset Your Password',
-      html: `
-        <p>Hello,</p>
-        <p>You requested a password reset. Click the link below to reset your password:</p>
-        <a href="${resetLink}" target="_blank">${resetLink}</a>
-        <p>If you didn’t request this, please ignore this email.</p>
-      `
-    });
+await transporter.sendMail({
+  from: `"RidePay" <${process.env.SMTP_USER}>`,
+  to: email,
+  subject: 'RidePay | Reset Your Password',
+  html: `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; background-color: #f9f9f9; border-radius: 10px; border: 1px solid #e0e0e0;">
+      <h2 style="color: #2c3e50; text-align: center;">RidePay Password Reset</h2>
+      <p style="color: #333; font-size: 15px;">
+        Hello,
+      </p>
+      <p style="color: #333; font-size: 15px;">
+        We received a request to reset your RidePay account password. Click the button below to set up a new password:
+      </p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${resetLink}" target="_blank" style="background-color: #4CAF50; color: white; padding: 14px 28px; text-decoration: none; font-size: 16px; border-radius: 6px; display: inline-block;">
+          Reset Password
+        </a>
+      </div>
+      <p style="color: #333; font-size: 14px;">
+        If you didn’t request a password reset, please ignore this email. This link will expire after a short period for your security.
+      </p>
+      <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;" />
+      <p style="color: #999; font-size: 12px; text-align: center;">
+        © ${new Date().getFullYear()} RidePay. All rights reserved.
+      </p>
+    </div>
+  `
+});
 
     return res.status(200).json({ message: 'Password reset email sent successfully' });
 
