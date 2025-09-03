@@ -3,7 +3,10 @@ const { db } = require('../config/firebase');
 const admin = require("firebase-admin");
 const nodemailer = require('nodemailer');
 
-const USERS_PATH = 'r3g1s_user_us3r_4cc5';
+const USERS_PATHS = [
+  'r3g1s_user_us3r_4cc5',
+  'p4zs3gr_usr_uu34'
+];
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -21,22 +24,26 @@ const sendPasswordReset = async (req, res) => {
   }
 
   try {
-    // 🔍 Look for the email in the Realtime Database
-    const snapshot = await db.ref(USERS_PATH).once('value');
-    const users = snapshot.val();
-
     let foundUid = null;
 
-    if (users) {
-      for (const uid in users) {
-        const dbEmail = String(users[uid]?.email || '').toLowerCase();
-        const inputEmail = String(email || '').toLowerCase();
+    // 🔍 Loop through all user tables
+    for (const path of USERS_PATHS) {
+      const snapshot = await db.ref(path).once('value');
+      const users = snapshot.val();
 
-        if (dbEmail === inputEmail) {
-          foundUid = uid;
-          break;
+      if (users) {
+        for (const uid in users) {
+          const dbEmail = String(users[uid]?.email || '').toLowerCase();
+          const inputEmail = String(email || '').toLowerCase();
+
+          if (dbEmail === inputEmail) {
+            foundUid = uid;
+            break;
+          }
         }
       }
+
+      if (foundUid) break; // stop searching if found
     }
 
     if (!foundUid) {
