@@ -21,12 +21,10 @@ async function issueCard(req, res) {
       cardIssuanceFee,
       cardIssuanceLocation,
       organization,
-      amount,
     } = req.body;
 
-    // Validate required fields
     if (!tagUid || !userUid || typeof cardPrice !== 'number' ||
-        typeof cardIssuanceFee !== 'number' || !cardIssuanceLocation || typeof amount !== 'number') {
+        typeof cardIssuanceFee !== 'number' || !cardIssuanceLocation) {
       return res.status(400).json({ message: 'Missing required fields for card issuance transaction.' });
     }
 
@@ -53,27 +51,77 @@ async function issueCard(req, res) {
     });
 
     // Update user record
-    await db.ref(`p4zs3gr_usr_uu34/${userUid}`).update({
-      cardId
+    await db.ref(`p4zs3gr_usr_uu34/${userUid}`).update({ cardId });
+
+    // 🔹 PROMO CHECKING
+    const promosSnap = await db.ref("promos-dat").once("value");
+    const promosData = promosSnap.val() || {};
+    const today = new Date();
+    const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD
+    const todayWeekDay = today.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
+
+    let baseAmount = cardPrice + cardIssuanceFee;
+    let appliedPromos = {};
+
+    // Separate percentage and flat promos
+    let percentPromos = [];
+    let flatPromos = [];
+
+    Object.values(promosData).forEach(promo => {
+      if (promo.effectType !== "card") return;
+
+      let eligible = false;
+
+      if (promo.dateRange) {
+        eligible = todayStr >= promo.startDate && todayStr <= promo.endDate;
+      } else if (promo.weekDays && Array.isArray(promo.weekDays)) {
+        eligible = promo.weekDays.map(d => d.toLowerCase()).includes(todayWeekDay);
+      }
+
+      if (eligible) {
+        if (promo.percentage) {
+          percentPromos.push(promo);
+        } else {
+          flatPromos.push(promo);
+        }
+      }
     });
 
-    // 🔹 Record the card issuance transaction
+    // Apply percentage promos first
+    percentPromos.forEach(p => {
+      const discountValue = baseAmount * (p.discount / 100);
+      baseAmount -= discountValue;
+      appliedPromos[p.name] = { discount: `${p.discount}%` };
+    });
+
+    // Then apply flat promos
+    flatPromos.forEach(p => {
+      baseAmount -= p.discount;
+      appliedPromos[p.name] = { discount: `${p.discount}` };
+    });
+
+    if (baseAmount < 0) baseAmount = 0;
+
+    // 🔹 Record the transaction with promos
     await createTransactionRecord({
       type: 'card',
-      amount,           // total amount (cardPrice + fee)
+      amount: baseAmount,
       fromUser: userUid,
       issuedCard: cardId,
       cardPrice,
       cardIssuanceFee,
       organization,
-      cardIssuanceLocation
+      cardIssuanceLocation,
+      promos: appliedPromos
     });
 
     return res.status(200).json({
       message: 'Card issued and transaction recorded successfully',
       cardId,
       tagUid,
-      userUid
+      userUid,
+      finalAmount: baseAmount,
+      promos: appliedPromos
     });
 
   } catch (error) {
