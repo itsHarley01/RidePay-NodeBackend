@@ -3,6 +3,7 @@ const { db, bucket } = require("../config/firebase");
 const { v4: uuidv4 } = require("uuid");
 
 // CREATE Promo
+// CREATE Promo
 const createPromo = async (req, res) => {
   try {
     const {
@@ -50,15 +51,35 @@ const createPromo = async (req, res) => {
 
     if (promoData.dateRange) {
       if (!startDate || !endDate) {
-        return res.status(400).json({ error: "startDate and endDate required when dateRange is true" });
+        return res
+          .status(400)
+          .json({ error: "startDate and endDate required when dateRange is true" });
       }
       promoData.startDate = startDate;
       promoData.endDate = endDate;
     } else {
       if (!weekDays) {
-        return res.status(400).json({ error: "weekDays must be provided when dateRange is false" });
+        return res
+          .status(400)
+          .json({ error: "weekDays must be provided when dateRange is false" });
       }
-      promoData.weekDays = Array.isArray(weekDays) ? weekDays : [weekDays];
+
+      const validDays = [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+      ];
+
+      // Normalize into boolean map
+      const daysArray = Array.isArray(weekDays) ? weekDays : [weekDays];
+      promoData.weekDays = validDays.reduce((acc, day) => {
+        acc[day] = daysArray.includes(day);
+        return acc;
+      }, {});
     }
 
     // Save to Realtime DB
@@ -139,7 +160,9 @@ const updatePromo = async (req, res) => {
       ...(name && { name }),
       ...(effectType && { effectType }),
       ...(discount !== undefined && { discount: Number(discount) }),
-      ...(percentage !== undefined && { percentage: percentage === "true" || percentage === true }),
+      ...(percentage !== undefined && {
+        percentage: percentage === "true" || percentage === true,
+      }),
       ...(photoUrl && { photo: photoUrl }),
       updatedAt: new Date().toISOString(),
     };
@@ -152,7 +175,9 @@ const updatePromo = async (req, res) => {
         // switching to range → remove weekDays, add start+end
         delete updatedData.weekDays;
         if (!startDate || !endDate) {
-          return res.status(400).json({ error: "startDate and endDate required when dateRange is true" });
+          return res
+            .status(400)
+            .json({ error: "startDate and endDate required when dateRange is true" });
         }
         updatedData.startDate = startDate;
         updatedData.endDate = endDate;
@@ -161,9 +186,26 @@ const updatePromo = async (req, res) => {
         delete updatedData.startDate;
         delete updatedData.endDate;
         if (!weekDays) {
-          return res.status(400).json({ error: "weekDays must be provided when dateRange is false" });
+          return res
+            .status(400)
+            .json({ error: "weekDays must be provided when dateRange is false" });
         }
-        updatedData.weekDays = Array.isArray(weekDays) ? weekDays : [weekDays];
+
+        const validDays = [
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday",
+        ];
+
+        const daysArray = Array.isArray(weekDays) ? weekDays : [weekDays];
+        updatedData.weekDays = validDays.reduce((acc, day) => {
+          acc[day] = daysArray.includes(day);
+          return acc;
+        }, {});
       }
     }
 
