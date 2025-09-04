@@ -9,6 +9,8 @@ const createTransactionRecord = async ({
   amount,
   fromUser,
   organization,
+  promos = {},     // ✅ safe default
+  discount = null, // ✅ safe default
   ...otherFields
 }) => {
   if (!type || typeof amount !== 'number' || !fromUser) {
@@ -20,6 +22,7 @@ const createTransactionRecord = async ({
   const isoDate = date.toISOString();
   const timestamp = date.getTime();
 
+  // ✅ Always include promos + discount at root
   const baseTransaction = {
     type,
     date: isoDate,
@@ -27,12 +30,14 @@ const createTransactionRecord = async ({
     amount,
     fromUser,
     organization,
+    promos,
+    discount,
   };
 
   let fullTransaction = { ...baseTransaction };
 
   switch (type) {
-    case 'bus':
+    case 'bus': {
       const {
         busId,
         deviceId,
@@ -41,7 +46,13 @@ const createTransactionRecord = async ({
         busPaymentAmount,
       } = otherFields;
 
-      if (!busId || !deviceId || !driverId || !busPaymentType || typeof busPaymentAmount !== 'number') {
+      if (
+        !busId ||
+        !deviceId ||
+        !driverId ||
+        !busPaymentType ||
+        typeof busPaymentAmount !== 'number'
+      ) {
         throw new Error('Missing bus transaction fields.');
       }
 
@@ -55,7 +66,7 @@ const createTransactionRecord = async ({
       ];
 
       const optionalData = {};
-      optionalKeys.forEach(k => {
+      optionalKeys.forEach((k) => {
         if (otherFields[k] !== undefined) optionalData[k] = otherFields[k];
       });
 
@@ -67,14 +78,18 @@ const createTransactionRecord = async ({
         busPaymentType,
         busPaymentAmount,
         ...optionalData,
-        ...(promos ? { promos } : {}),
       };
       break;
+    }
 
-    case 'topup':
+    case 'topup': {
       const { topupMethod, topUpAmount, topUpFee } = otherFields;
 
-      if (!topupMethod || typeof topUpAmount !== 'number' || typeof topUpFee !== 'number') {
+      if (
+        !topupMethod ||
+        typeof topUpAmount !== 'number' ||
+        typeof topUpFee !== 'number'
+      ) {
         throw new Error('Missing top-up transaction fields.');
       }
 
@@ -85,14 +100,14 @@ const createTransactionRecord = async ({
         topUpFee,
       };
       break;
+    }
 
-    case 'card':
+    case 'card': {
       const {
         issuedCard,
         cardPrice,
         cardIssuanceFee,
         cardIssuanceLocation,
-        promos, 
       } = otherFields;
 
       if (
@@ -110,9 +125,9 @@ const createTransactionRecord = async ({
         cardPrice,
         cardIssuanceFee,
         cardIssuanceLocation,
-        ...(promos ? { promos } : {}),
       };
       break;
+    }
 
     default:
       throw new Error(`Invalid transaction type: ${type}`);
