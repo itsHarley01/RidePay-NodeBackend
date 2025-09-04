@@ -106,5 +106,108 @@ const getAllDiscountApplication = async (req, res) => {
     }
 };
 
+const fetchDiscountValidity = async (category) => {
+    const snapshot = await db.ref(`r1d3-py_discount/${category}/validity`).once("value");
+    if (!snapshot.exists()) throw new Error("Discount validity not found");
+    return snapshot.val(); // number of years
+};
 
-module.exports = { createDiscountApplication, getAllDiscountApplication  };
+const approveDiscountApplication = async (req, res) => {
+    try {
+        const { applicationId } = req.params;
+
+        if (!applicationId) {
+            return res.status(400).json({ error: "Missing applicationId" });
+        }
+
+        // Get application data
+        const appSnapshot = await db.ref(`41scnnt_4p41ica80/${applicationId}`).once("value");
+        if (!appSnapshot.exists()) {
+            return res.status(404).json({ error: "Application not found" });
+        }
+
+        const applicationData = appSnapshot.val();
+        if (!applicationData || !applicationData.userId) {
+            return res.status(400).json({ error: "Invalid application data" });
+        }
+
+        const { userId, category } = applicationData;
+
+        // Get validity in years
+        const validityYears = await fetchDiscountValidity(category);
+
+        // Calculate expiration date
+        const approvalDate = new Date();
+        const expirationDate = new Date(approvalDate);
+        expirationDate.setFullYear(expirationDate.getFullYear() + validityYears);
+
+        // Update application status
+        const updatedStatus = {
+            status: "approved",
+            dateOfApplication: applicationData.status.dateOfApplication || null,
+            dateOfApproval: approvalDate.toISOString(),
+            discountExpiration: expirationDate.toISOString()
+        };
+
+        await db.ref(`41scnnt_4p41ica80/${applicationId}/status`).set(updatedStatus);
+
+        // Update user account
+        await db.ref(`p4zs3gr_usr_uu34/${userId}`).update({
+            discount: true,
+            discountExpiration: expirationDate.toISOString(),
+            discountType: category
+        });
+
+        return res.status(200).json({
+            message: "Application approved successfully",
+            applicationId,
+            userId,
+            discountExpiration: expirationDate.toISOString()
+        });
+
+    } catch (error) {
+        console.error("Error approving discount application:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+const rejectDiscountApplication = async (req, res) => {
+    try {
+        const { applicationId } = req.params;
+
+        if (!applicationId) {
+            return res.status(400).json({ error: "Missing applicationId" });
+        }
+
+        // Get application data
+        const appSnapshot = await db.ref(`41scnnt_4p41ica80/${applicationId}`).once("value");
+        if (!appSnapshot.exists()) {
+            return res.status(404).json({ error: "Application not found" });
+        }
+
+        const applicationData = appSnapshot.val();
+
+        // Update status
+        const updatedStatus = {
+            status: "rejected",
+            dateOfApplication: applicationData.status?.dateOfApplication || null,
+            dateOfRejection: new Date().toISOString()
+        };
+
+        await db.ref(`41scnnt_4p41ica80/${applicationId}/status`).set(updatedStatus);
+
+        return res.status(200).json({
+            message: "Application rejected successfully",
+            applicationId,
+            status: updatedStatus
+        });
+
+    } catch (error) {
+        console.error("Error rejecting discount application:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+
+
+module.exports = { createDiscountApplication, getAllDiscountApplication, approveDiscountApplication, rejectDiscountApplication};

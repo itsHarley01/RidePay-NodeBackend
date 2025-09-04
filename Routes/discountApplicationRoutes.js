@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { createDiscountApplication , getAllDiscountApplication} = require('../Controllers/discountApplication');
+const { createDiscountApplication , getAllDiscountApplication, approveDiscountApplication, rejectDiscountApplication} = require('../Controllers/discountApplication');
 
 // Multer setup: store files in memory (so we can upload directly to Firebase Storage)
 const storage = multer.memoryStorage();
@@ -36,5 +36,7 @@ router.post('/discount/apply', upload.any(), async (req, res) => {
 });
 
 router.get('/discount/applications', getAllDiscountApplication); 
+router.patch('/discount/applications/:applicationId', approveDiscountApplication);
+router.patch('/discount/applications/reject/:applicationId', rejectDiscountApplication);
 
 module.exports = router;
