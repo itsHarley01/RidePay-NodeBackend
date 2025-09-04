@@ -91,6 +91,7 @@ const createTransactionRecord = async ({
         cardPrice,
         cardIssuanceFee,
         cardIssuanceLocation,
+        promos, 
       } = otherFields;
 
       if (
@@ -108,6 +109,7 @@ const createTransactionRecord = async ({
         cardPrice,
         cardIssuanceFee,
         cardIssuanceLocation,
+        ...(promos ? { promos } : {}),
       };
       break;
 
