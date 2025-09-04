@@ -3,7 +3,6 @@ const { db, bucket } = require("../config/firebase");
 const { v4: uuidv4 } = require("uuid");
 
 // CREATE Promo
-// CREATE Promo
 const createPromo = async (req, res) => {
   try {
     const {
@@ -51,35 +50,20 @@ const createPromo = async (req, res) => {
 
     if (promoData.dateRange) {
       if (!startDate || !endDate) {
-        return res
-          .status(400)
-          .json({ error: "startDate and endDate required when dateRange is true" });
+        return res.status(400).json({ error: "startDate and endDate required when dateRange is true" });
       }
       promoData.startDate = startDate;
       promoData.endDate = endDate;
     } else {
-      if (!weekDays) {
-        return res
-          .status(400)
-          .json({ error: "weekDays must be provided when dateRange is false" });
+      if (!weekDays || weekDays.length === 0) {
+        return res.status(400).json({ error: "weekDays must be provided when dateRange is false" });
       }
-
-      const validDays = [
-        "monday",
-        "tuesday",
-        "wednesday",
-        "thursday",
-        "friday",
-        "saturday",
-        "sunday",
-      ];
-
-      // Normalize into boolean map
-      const daysArray = Array.isArray(weekDays) ? weekDays : [weekDays];
-      promoData.weekDays = validDays.reduce((acc, day) => {
-        acc[day] = daysArray.includes(day);
-        return acc;
-      }, {});
+      // Convert array to indexed object
+      const weekDaysObj = {};
+      (Array.isArray(weekDays) ? weekDays : [weekDays]).forEach((day, idx) => {
+        weekDaysObj[idx] = day;
+      });
+      promoData.weekDays = weekDaysObj;
     }
 
     // Save to Realtime DB
@@ -89,26 +73,6 @@ const createPromo = async (req, res) => {
     res.status(201).json({ id: promoRef.key, ...promoData });
   } catch (error) {
     console.error("Error creating promo:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
-
-// GET all promos
-const getPromos = async (req, res) => {
-  try {
-    const snapshot = await db.ref("promos-dat").once("value");
-    if (!snapshot.exists()) {
-      return res.status(200).json([]);
-    }
-
-    const promos = [];
-    snapshot.forEach((child) => {
-      promos.push({ id: child.key, ...child.val() });
-    });
-
-    res.status(200).json(promos);
-  } catch (error) {
-    console.error("Error fetching promos:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -156,18 +120,16 @@ const updatePromo = async (req, res) => {
 
     // Prepare update object
     const updatedData = {
-      ...existingData, // keep old values
+      ...existingData,
       ...(name && { name }),
       ...(effectType && { effectType }),
       ...(discount !== undefined && { discount: Number(discount) }),
-      ...(percentage !== undefined && {
-        percentage: percentage === "true" || percentage === true,
-      }),
+      ...(percentage !== undefined && { percentage: percentage === "true" || percentage === true }),
       ...(photoUrl && { photo: photoUrl }),
       updatedAt: new Date().toISOString(),
     };
 
-    // Handle dateRange switch
+    // Handle dateRange logic
     if (dateRange !== undefined) {
       updatedData.dateRange = dateRange === "true" || dateRange === true;
 
@@ -175,9 +137,7 @@ const updatePromo = async (req, res) => {
         // switching to range → remove weekDays, add start+end
         delete updatedData.weekDays;
         if (!startDate || !endDate) {
-          return res
-            .status(400)
-            .json({ error: "startDate and endDate required when dateRange is true" });
+          return res.status(400).json({ error: "startDate and endDate required when dateRange is true" });
         }
         updatedData.startDate = startDate;
         updatedData.endDate = endDate;
@@ -185,34 +145,42 @@ const updatePromo = async (req, res) => {
         // switching to weekDays → remove start/end
         delete updatedData.startDate;
         delete updatedData.endDate;
-        if (!weekDays) {
-          return res
-            .status(400)
-            .json({ error: "weekDays must be provided when dateRange is false" });
+        if (!weekDays || weekDays.length === 0) {
+          return res.status(400).json({ error: "weekDays must be provided when dateRange is false" });
         }
-
-        const validDays = [
-          "monday",
-          "tuesday",
-          "wednesday",
-          "thursday",
-          "friday",
-          "saturday",
-          "sunday",
-        ];
-
-        const daysArray = Array.isArray(weekDays) ? weekDays : [weekDays];
-        updatedData.weekDays = validDays.reduce((acc, day) => {
-          acc[day] = daysArray.includes(day);
-          return acc;
-        }, {});
+        const weekDaysObj = {};
+        (Array.isArray(weekDays) ? weekDays : [weekDays]).forEach((day, idx) => {
+          weekDaysObj[idx] = day;
+        });
+        updatedData.weekDays = weekDaysObj;
       }
     }
 
-    await promoRef.update(updatedData);
+    await promoRef.set(updatedData); // overwrite with cleaned structure
     res.status(200).json({ id, ...updatedData });
   } catch (error) {
     console.error("Error updating promo:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+
+// GET all promos
+const getPromos = async (req, res) => {
+  try {
+    const snapshot = await db.ref("promos-dat").once("value");
+    if (!snapshot.exists()) {
+      return res.status(200).json([]);
+    }
+
+    const promos = [];
+    snapshot.forEach((child) => {
+      promos.push({ id: child.key, ...child.val() });
+    });
+
+    res.status(200).json(promos);
+  } catch (error) {
+    console.error("Error fetching promos:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
