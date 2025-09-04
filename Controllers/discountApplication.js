@@ -46,6 +46,7 @@ const createDiscountApplication = async (req, res) => {
             applicationData.data.schoolName = data.schoolName;
             applicationData.data.schoolLocation = data.schoolLocation;
             applicationData.data.schoolYear = data.schoolYear;
+            applicationData.data.idNum = data.idNum;
         }
 // Handle file uploads using Admin SDK bucket
         if (files) {
