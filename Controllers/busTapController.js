@@ -133,7 +133,7 @@ const tapBus = async (req, res) => {
       driverId,
       busPaymentType: 'fixed',
       organization: 'Coop 1',
-      busPaymentAmount: finalFare,
+      busPaymentAmount: minimumFeeRaw,
       discount: appliedDiscount,
       promos: appliedPromos,
     });
