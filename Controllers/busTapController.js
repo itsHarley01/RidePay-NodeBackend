@@ -46,14 +46,15 @@ const tapBus = async (req, res) => {
     }
 
     // Step 2: Get user balance
-    const userSnap = await db.ref(`${USER_PATH}/${userUid}/balance`).get();
-    const currentBalance = userSnap.val();
+    const userSnap = await db.ref(`${USER_PATH}/${userUid}`).get();
+    const userData = userSnap.val();
+    const currentBalance = userData?.balance;
 
     if (typeof currentBalance !== 'number') {
       return res.status(500).json({ success: false, message: 'Invalid or missing user balance.' });
     }
 
-    // Step 3: Get fare
+    // Step 3: Get base fare
     const tariffSnap = await db.ref(TARIFF_PATH).get();
     const minimumFeeRaw = tariffSnap.val();
     const minimumFee = Number(minimumFeeRaw);
@@ -65,39 +66,83 @@ const tapBus = async (req, res) => {
     // Step 3.5: Get driverId from bus
     const busSnap = await db.ref(`${BUS_PATH}/${busId}/driver`).get();
     const driverId = busSnap.val();
-
     if (!driverId) {
       return res.status(500).json({ success: false, message: 'Driver ID not found for this bus.' });
     }
 
+    // --- APPLY DISCOUNT ---
+    let finalFare = minimumFee;
+    let appliedDiscount = null;
+
+    if (userData?.discount === true && userData.discountType) {
+      const discountSnap = await db.ref(`${DISCOUNT_PATH}/${userData.discountType}`).get();
+      if (discountSnap.exists()) {
+        const discountRate = discountSnap.val().rate; // percentage
+        if (typeof discountRate === 'number' && discountRate > 0) {
+          const discountAmount = (minimumFee * discountRate) / 100;
+          finalFare -= discountAmount;
+          appliedDiscount = {
+            type: userData.discountType,
+            rate: discountRate,
+            amount: discountAmount,
+          };
+        }
+      }
+    }
+
+    // --- APPLY PROMOS ---
+    const promosSnap = await db.ref(PROMOS_PATH).get();
+    const promos = promosSnap.exists() ? promosSnap.val() : {};
+    let appliedPromos = {};
+
+    for (const [promoId, promo] of Object.entries(promos)) {
+      if (promo.effectType === 'bus') {
+        // Apply promo logic: e.g., discount percentage
+        const discountValue = Number(promo.discountValue) || 0;
+        if (discountValue > 0) {
+          const discountAmount = (finalFare * discountValue) / 100;
+          finalFare -= discountAmount;
+          appliedPromos[promoId] = {
+            name: promo.name || 'Bus Promo',
+            discount: `${discountValue}%`,
+            amount: discountAmount,
+          };
+        }
+      }
+    }
+
     // Step 4: Check balance
-    if (currentBalance < minimumFee) {
+    if (currentBalance < finalFare) {
       return res.status(402).json({ success: false, message: 'Insufficient balance.' });
     }
 
-    const newBalance = currentBalance - minimumFee;
+    const newBalance = currentBalance - finalFare;
 
     // Step 5: Update user balance
     await db.ref(`${USER_PATH}/${userUid}/balance`).set(newBalance);
 
-    // Step 6: Record transaction
+    // Step 6: Record transaction with discount + promos
     await createTransactionRecord({
       type: 'bus',
-      amount: minimumFee,
+      amount: finalFare,
       fromUser: userUid,
       busId,
       deviceId,
       driverId,
       busPaymentType: 'fixed',
-      organization: 'Coop 1', 
-      busPaymentAmount: minimumFee,
-      
+      organization: 'Coop 1',
+      busPaymentAmount: finalFare,
+      discount: appliedDiscount,
+      promos: appliedPromos,
     });
 
     return res.status(200).json({
       success: true,
       message: 'Fare deducted and transaction recorded.',
       newBalance,
+      finalFare,
+      appliedDiscount,
+      appliedPromos,
     });
 
   } catch (error) {

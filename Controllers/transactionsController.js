@@ -26,7 +26,7 @@ const createTransactionRecord = async ({
     timestamp,
     amount,
     fromUser,
-    organization
+    organization,
   };
 
   let fullTransaction = { ...baseTransaction };
@@ -66,7 +66,8 @@ const createTransactionRecord = async ({
         driverId,
         busPaymentType,
         busPaymentAmount,
-        ...optionalData
+        ...optionalData,
+        ...(promos ? { promos } : {}),
       };
       break;
 
@@ -133,6 +134,8 @@ const createTransaction = async (req, res) => {
       amount,
       fromUser,
       organization,
+      promos = null,
+      discount = null,
       ...otherFields
     } = req.body;
 
@@ -155,6 +158,8 @@ const createTransaction = async (req, res) => {
       amount,
       fromUser,
       organization,
+      promos: promos || {},      // ✅ always include promos
+      discount: discount || {},  // ✅ always include discount
     };
 
     let fullTransaction = { ...baseTransaction };
