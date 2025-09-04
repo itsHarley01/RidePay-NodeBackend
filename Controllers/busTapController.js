@@ -8,6 +8,7 @@ const BUS_PATH = 'r1d3-py_bus';
 const DRIVER_PATH = 'r3g1s_user_us3r_4cc5';
 const DISTANCE_TARIFF_PATH = 'r1d3-py_tariff/distanceBased';
 const DISCOUNT_PATH = 'r1d3-py_discount';
+const PROMOS_PATH = 'promos-dat';
 
 // Haversine formula
 function calculateDistance(lat1, lon1, lat2, lon2) {
