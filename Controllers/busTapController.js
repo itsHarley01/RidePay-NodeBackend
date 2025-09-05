@@ -100,7 +100,7 @@ const tapBus = async (req, res) => {
     for (const [promoId, promo] of Object.entries(promos)) {
       if (promo.effectType === 'bus') {
         // Apply promo logic: e.g., discount percentage
-        const discountValue = Number(promo.discountValue) || 0;
+        const discountValue = Number(promo.discount) || 0;
         if (discountValue > 0) {
           const discountAmount = (finalFare * discountValue) / 100;
           finalFare -= discountAmount;
