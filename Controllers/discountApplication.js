@@ -30,6 +30,7 @@ const createDiscountApplication = async (req, res) => {
                 lastName: data.lastName,
                 middleName: data.middleName || "",
                 age: data.age,
+                birthDate: data.birthDate,
                 gender: data.gender,
                 contactNumber: data.contactNumber,
                 email: data.email
