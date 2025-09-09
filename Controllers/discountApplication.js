@@ -34,7 +34,6 @@ const createDiscountApplication = async (req, res) => {
                 gender: data.gender,
                 contactNumber: data.contactNumber,
                 email: data.email
-                
             },
             file: {}
         };

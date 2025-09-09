@@ -92,26 +92,55 @@ const tapBus = async (req, res) => {
       }
     }
 
-    // --- APPLY PROMOS ---
-    const promosSnap = await db.ref(PROMOS_PATH).get();
-    const promos = promosSnap.exists() ? promosSnap.val() : {};
-    let appliedPromos = {};
+// --- APPLY PROMOS ---
+const promosSnap = await db.ref(PROMOS_PATH).get();
+const promos = promosSnap.exists() ? promosSnap.val() : {};
+let appliedPromos = {};
 
-    for (const [promoId, promo] of Object.entries(promos)) {
-      if (promo.effectType === 'bus') {
-        // Apply promo logic: e.g., discount percentage
-        const discountValue = Number(promo.discount) || 0;
-        if (discountValue > 0) {
-          const discountAmount = (finalFare * discountValue) / 100;
-          finalFare -= discountAmount;
-          appliedPromos[promoId] = {
-            name: promo.name || 'Bus Promo',
-            discount: `${discountValue}%`,
-            amount: discountAmount,
-          };
-        }
-      }
-    }
+for (const [promoId, promo] of Object.entries(promos)) {
+  if (promo.effectType !== 'bus') continue;
+
+  let eligible = false;
+  const today = new Date();
+  const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD
+  const todayWeekDay = today.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
+
+  // Check promo eligibility (dateRange or weekdays)
+  if (promo.dateRange) {
+    eligible = todayStr >= promo.startDate && todayStr <= promo.endDate;
+  } else if (promo.weekDays && Array.isArray(promo.weekDays)) {
+    eligible = promo.weekDays.map(d => d.toLowerCase()).includes(todayWeekDay);
+  }
+
+  if (!eligible) continue;
+
+  const discountValue = Number(promo.discount) || 0;
+  if (discountValue <= 0) continue;
+
+  let discountAmount = 0;
+
+  if (promo.percentage === true) {
+    // Percentage promo
+    discountAmount = (finalFare * discountValue) / 100;
+    appliedPromos[promoId] = {
+      name: promo.name || 'Bus Promo',
+      discount: `${discountValue}%`,
+      amount: discountAmount,
+    };
+  } else {
+    // Flat peso promo
+    discountAmount = discountValue;
+    appliedPromos[promoId] = {
+      name: promo.name || 'Bus Promo',
+      discount: `${discountValue}`,
+      amount: discountAmount,
+    };
+  }
+
+  finalFare -= discountAmount;
+  if (finalFare < 0) finalFare = 0; // prevent negative fare
+}
+
 
     // Step 4: Check balance
     if (currentBalance < finalFare) {
