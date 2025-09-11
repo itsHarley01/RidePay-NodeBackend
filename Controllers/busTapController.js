@@ -182,6 +182,150 @@ for (const [promoId, promo] of Object.entries(promos)) {
   }
 };
 
+// Controller: qrTapBus.ts
+const qrTapBus = async (req, res) => {
+  try {
+    const { userId, busId, deviceId } = req.body;
+
+    if (!userId || !busId || !deviceId) {
+      return res.status(400).json({ success: false, message: 'Missing required fields.' });
+    }
+
+    // Step 1: Get user balance
+    const userSnap = await db.ref(`${USER_PATH}/${userId}`).get();
+    if (!userSnap.exists()) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    const userData = userSnap.val();
+    const currentBalance = userData?.balance;
+
+    if (typeof currentBalance !== 'number') {
+      return res.status(500).json({ success: false, message: 'Invalid or missing user balance.' });
+    }
+
+    // Step 2: Get base fare
+    const tariffSnap = await db.ref(TARIFF_PATH).get();
+    const minimumFeeRaw = tariffSnap.val();
+    const minimumFee = Number(minimumFeeRaw);
+
+    if (isNaN(minimumFee) || minimumFee <= 0) {
+      return res.status(500).json({ success: false, message: 'Tariff not set or invalid.' });
+    }
+
+    // Step 3: Get driverId from bus
+    const busSnap = await db.ref(`${BUS_PATH}/${busId}/driver`).get();
+    const driverId = busSnap.val();
+    if (!driverId) {
+      return res.status(500).json({ success: false, message: 'Driver ID not found for this bus.' });
+    }
+
+    // --- APPLY DISCOUNT ---
+    let finalFare = minimumFee;
+    let appliedDiscount = null;
+
+    if (userData?.discount === true && userData.discountType) {
+      const discountSnap = await db.ref(`${DISCOUNT_PATH}/${userData.discountType}`).get();
+      if (discountSnap.exists()) {
+        const discountRate = discountSnap.val().rate; // percentage
+        if (typeof discountRate === 'number' && discountRate > 0) {
+          const discountAmount = (minimumFee * discountRate) / 100;
+          finalFare -= discountAmount;
+          appliedDiscount = {
+            type: userData.discountType,
+            rate: discountRate,
+            amount: discountAmount,
+          };
+        }
+      }
+    }
+
+    // --- APPLY PROMOS ---
+    const promosSnap = await db.ref(PROMOS_PATH).get();
+    const promos = promosSnap.exists() ? promosSnap.val() : {};
+    let appliedPromos = {};
+
+    for (const [promoId, promo] of Object.entries(promos)) {
+      if (promo.effectType !== 'bus') continue;
+
+      let eligible = false;
+      const today = new Date();
+      const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD
+      const todayWeekDay = today.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
+
+      if (promo.dateRange) {
+        eligible = todayStr >= promo.startDate && todayStr <= promo.endDate;
+      } else if (promo.weekDays && Array.isArray(promo.weekDays)) {
+        eligible = promo.weekDays.map(d => d.toLowerCase()).includes(todayWeekDay);
+      }
+
+      if (!eligible) continue;
+
+      const discountValue = Number(promo.discount) || 0;
+      if (discountValue <= 0) continue;
+
+      let discountAmount = 0;
+
+      if (promo.percentage === true) {
+        discountAmount = (finalFare * discountValue) / 100;
+        appliedPromos[promoId] = {
+          name: promo.name || 'Bus Promo',
+          discount: `${discountValue}%`,
+          amount: discountAmount,
+        };
+      } else {
+        discountAmount = discountValue;
+        appliedPromos[promoId] = {
+          name: promo.name || 'Bus Promo',
+          discount: `${discountValue}`,
+          amount: discountAmount,
+        };
+      }
+
+      finalFare -= discountAmount;
+      if (finalFare < 0) finalFare = 0;
+    }
+
+    // Step 4: Check balance
+    if (currentBalance < finalFare) {
+      return res.status(402).json({ success: false, message: 'Insufficient balance.' });
+    }
+
+    const newBalance = currentBalance - finalFare;
+
+    // Step 5: Update user balance
+    await db.ref(`${USER_PATH}/${userId}/balance`).set(newBalance);
+
+    // Step 6: Record transaction
+    await createTransactionRecord({
+      type: 'bus',
+      amount: finalFare,
+      fromUser: userId,
+      busId,
+      deviceId,
+      driverId,
+      busPaymentType: 'fixed',
+      organization: 'Coop 1',
+      busPaymentAmount: minimumFeeRaw,
+      discount: appliedDiscount,
+      promos: appliedPromos,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Fare deducted and transaction recorded via QR.',
+      newBalance,
+      finalFare,
+      appliedDiscount,
+      appliedPromos,
+    });
+
+  } catch (error) {
+    console.error('QR bus tap error:', error);
+    return res.status(500).json({ success: false, message: 'Server error.', error: error.message });
+  }
+};
+
 const driverBusTap = async (req, res) => {
   try {
     const { tagUid, cardId, busId } = req.body;
@@ -369,4 +513,4 @@ const distanceBasedBusTap = async (req, res) => {
   }
 };
 
-module.exports = { tapBus, driverBusTap, distanceBasedBusTap };
+module.exports = { tapBus, driverBusTap, distanceBasedBusTap, qrTapBus};

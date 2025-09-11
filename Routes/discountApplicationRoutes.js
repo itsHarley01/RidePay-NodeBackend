@@ -25,7 +25,7 @@ router.post('/discount/apply', upload.any(), async (req, res) => {
         // Data is sent as JSON string in multipart/form-data, parse it
         const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
 
-        await createDiscountApplication({ 
+        await createDiscountApplication({
             body: { userId, category, data: parsedData, files } 
         }, res);
 
