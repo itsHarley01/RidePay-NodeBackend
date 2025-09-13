@@ -429,8 +429,10 @@ const distanceBasedBusTap = async (req, res) => {
     // Step 1: Validate card
     const cardSnap = await db.ref(`${CARD_PATH}/${cardId}`).get();
     if (!cardSnap.exists()) return res.status(404).json({ success: false, message: 'Card ID not found.' });
+
     const cardData = cardSnap.val();
     if (cardData.tagUid !== tagUid) return res.status(403).json({ success: false, message: 'Tag UID mismatch.' });
+
     const userUid = cardData.userUid;
     if (!userUid) return res.status(404).json({ success: false, message: 'User UID not linked to card.' });
 
@@ -438,7 +440,7 @@ const distanceBasedBusTap = async (req, res) => {
     const tappedSnap = await db.ref(`${USER_PATH}/${userUid}/tapped`).get();
 
     if (!tappedSnap.exists()) {
-      // TAP-IN
+      // --- TAP-IN ---
       await db.ref(`${USER_PATH}/${userUid}/tapped`).set({
         timestamp: new Date().toISOString(),
         lat,
@@ -449,37 +451,116 @@ const distanceBasedBusTap = async (req, res) => {
       return res.status(200).json({ success: true, message: 'Tap-in recorded successfully.' });
 
     } else {
-      // TAP-OUT
+      // --- TAP-OUT ---
       const tapInData = tappedSnap.val();
       const distance = calculateDistance(tapInData.lat, tapInData.long, lat, long);
 
-      // Get tariff
+      // Step 3: Get tariff
       const tariffSnap = await db.ref(DISTANCE_TARIFF_PATH).get();
       const { minimumFare, succeedingDistance, succeedingFare } = tariffSnap.val();
 
-      // Compute fare
-      let fare = Number(minimumFare);
+      // Step 4: Compute base fare
+      let baseFare = Number(minimumFare);
       if (distance > succeedingDistance) {
         const extraKm = Math.ceil((distance - succeedingDistance) / succeedingDistance);
-        fare += extraKm * Number(succeedingFare);
+        baseFare += extraKm * Number(succeedingFare);
       }
 
-      // Check balance
-      const balanceSnap = await db.ref(`${USER_PATH}/${userUid}/balance`).get();
-      const balance = balanceSnap.val();
-      if (balance < fare) return res.status(402).json({ success: false, message: 'Insufficient balance.' });
+      // Step 5: Get user data + balance
+      const userSnap = await db.ref(`${USER_PATH}/${userUid}`).get();
+      const userData = userSnap.val();
+      const currentBalance = userData?.balance;
 
-      // Get driver
+      if (typeof currentBalance !== 'number') {
+        return res.status(500).json({ success: false, message: 'Invalid or missing user balance.' });
+      }
+
+      // Step 6: Get driver
       const busSnap = await db.ref(`${BUS_PATH}/${busId}/driver`).get();
       const driverId = busSnap.val();
+      if (!driverId) {
+        return res.status(500).json({ success: false, message: 'Driver ID not found for this bus.' });
+      }
 
-      // Deduct balance
-      await db.ref(`${USER_PATH}/${userUid}/balance`).set(balance - fare);
+      // --- APPLY DISCOUNT ---
+      let finalFare = baseFare;
+      let appliedDiscount = null;
 
-      // Record transaction
+      if (userData?.discount === true && userData.discountType) {
+        const discountSnap = await db.ref(`${DISCOUNT_PATH}/${userData.discountType}`).get();
+        if (discountSnap.exists()) {
+          const discountRate = discountSnap.val().rate; // percentage
+          if (typeof discountRate === 'number' && discountRate > 0) {
+            const discountAmount = (baseFare * discountRate) / 100;
+            finalFare -= discountAmount;
+            appliedDiscount = {
+              type: userData.discountType,
+              rate: discountRate,
+              amount: discountAmount,
+            };
+          }
+        }
+      }
+
+      // --- APPLY PROMOS ---
+      const promosSnap = await db.ref(PROMOS_PATH).get();
+      const promos = promosSnap.exists() ? promosSnap.val() : {};
+      let appliedPromos = {};
+
+      for (const [promoId, promo] of Object.entries(promos)) {
+        if (promo.effectType !== 'bus') continue;
+
+        let eligible = false;
+        const today = new Date();
+        const todayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD
+        const todayWeekDay = today.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
+
+        if (promo.dateRange) {
+          eligible = todayStr >= promo.startDate && todayStr <= promo.endDate;
+        } else if (promo.weekDays && Array.isArray(promo.weekDays)) {
+          eligible = promo.weekDays.map(d => d.toLowerCase()).includes(todayWeekDay);
+        }
+
+        if (!eligible) continue;
+
+        const discountValue = Number(promo.discount) || 0;
+        if (discountValue <= 0) continue;
+
+        let discountAmount = 0;
+        if (promo.percentage === true) {
+          discountAmount = (finalFare * discountValue) / 100;
+          appliedPromos[promoId] = {
+            name: promo.name || 'Bus Promo',
+            discount: `${discountValue}%`,
+            amount: discountAmount,
+          };
+        } else {
+          discountAmount = discountValue;
+          appliedPromos[promoId] = {
+            name: promo.name || 'Bus Promo',
+            discount: `${discountValue}`,
+            amount: discountAmount,
+          };
+        }
+
+        finalFare -= discountAmount;
+        if (finalFare < 0) finalFare = 0;
+      }
+
+      // Step 7: Check balance
+      if (currentBalance < finalFare) {
+        return res.status(402).json({ success: false, message: 'Insufficient balance.' });
+      }
+
+      const newBalance = currentBalance - finalFare;
+
+      // Step 8: Update balance
+      await db.ref(`${USER_PATH}/${userUid}/balance`).set(newBalance);
+
+      // Step 9: Record transaction (with discount + promos)
       await createTransactionRecord({
         type: 'bus',
-        amount: fare,
+        amount: finalFare,
         fromUser: userUid,
         busId,
         deviceId,
@@ -487,7 +568,9 @@ const distanceBasedBusTap = async (req, res) => {
         busPaymentType: 'distanceBased',
         organization: 'Coop1',
         operatorUnit: 'Operator 1',
-        busPaymentAmount: minimumFare,
+        busPaymentAmount: baseFare,
+        discount: appliedDiscount,
+        promos: appliedPromos,
         succeedingDistance,
         succeedingFare,
         tapIn: tapInData,
@@ -502,8 +585,11 @@ const distanceBasedBusTap = async (req, res) => {
         success: true,
         message: 'Fare deducted and transaction recorded.',
         distance: distance.toFixed(2),
-        fare,
-        newBalance: balance - fare
+        baseFare,
+        finalFare,
+        appliedDiscount,
+        appliedPromos,
+        newBalance,
       });
     }
 
@@ -512,5 +598,6 @@ const distanceBasedBusTap = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Server error.', error: error.message });
   }
 };
+
 
 module.exports = { tapBus, driverBusTap, distanceBasedBusTap, qrTapBus};
