@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { createDiscountApplication , getAllDiscountApplication, approveDiscountApplication, rejectDiscountApplication} = require('../Controllers/discountApplication');
+const { createDiscountApplication , getAllDiscountApplication, approveDiscountApplication, rejectDiscountApplication, renewDiscountApplication} = require('../Controllers/discountApplication');
 
 // Multer setup: store files in memory (so we can upload directly to Firebase Storage)
 const storage = multer.memoryStorage();
@@ -27,6 +27,31 @@ router.post('/discount/apply', upload.any(), async (req, res) => {
 
         await createDiscountApplication({
             body: { userId, category, data: parsedData, files } 
+        }, res);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Something went wrong" });
+    }
+});
+
+router.post('/discount/renew', upload.any(), async (req, res) => {
+    try {
+        const { userId, discountId, category, data } = req.body;
+
+        // Collect files from multer
+        const files = {};
+        if (req.files) {
+            req.files.forEach(file => {
+                files[file.fieldname] = file;
+            });
+        }
+
+        // Parse JSON string in multipart/form-data
+        const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+
+        await renewDiscountApplication({
+            body: { userId, discountId, category, data: parsedData, files }
         }, res);
 
     } catch (err) {
