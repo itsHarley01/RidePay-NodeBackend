@@ -191,6 +191,17 @@ const qrTapBus = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Missing required fields.' });
     }
 
+    // 🔹 Step 0: Check discount expiration before continuing
+    try {
+      const expirationResult = await applicationExpiration(userId);
+      console.log("Discount check:", expirationResult);
+      // we don’t block the transaction if expired, we just update
+    } catch (err) {
+      console.error("applicationExpiration error:", err);
+      // optional: you can return error here if you want to block, 
+      // but usually better to just log and continue
+    }
+
     // Step 1: Get user balance
     const userSnap = await db.ref(`${USER_PATH}/${userId}`).get();
     if (!userSnap.exists()) {
