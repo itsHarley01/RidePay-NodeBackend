@@ -3,13 +3,12 @@ const { db } = require('../config/firebase');
 const nodemailer = require('nodemailer');
 
 // Setup Nodemailer transporter
+// Setup Nodemailer transporter
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,            // or 587
-  secure: true,         // true for 465, false for 587
+  service: 'gmail', // or smtp server you use
   auth: {
-    user: process.env.SMTP_USER, // your Gmail address
-    pass: process.env.SMTP_PASS, // App Password
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
   },
 });
 
