@@ -1,16 +1,12 @@
-const generateOTP = require('../utils/otpGenerator'); // your existing util
+const generateOTP = require('../utils/otpGenerator');
 const { db } = require('../config/firebase');
-const nodemailer = require('nodemailer');
+const Mailjet = require('node-mailjet');
 
-// Setup Nodemailer transporter
-// Setup Nodemailer transporter
-const transporter = nodemailer.createTransport({
-  service: 'gmail', // or smtp server you use
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+// Setup Mailjet
+const mailjet = Mailjet.apiConnect(
+  process.env.MAILJET_API_KEY,
+  process.env.MAILJET_SECRET_KEY
+);
 
 // 1. Send OTP
 const sendUserOtp = async (req, res) => {
@@ -27,10 +23,8 @@ const sendUserOtp = async (req, res) => {
       return res.status(400).json({ error: "Email is already in use" });
     }
 
-    // Generate 4-char OTP
     const otp = generateOTP(4);
 
-    // Generate random ID
     const newOtpRef = db.ref("temp-user-otp").push();
     await newOtpRef.set({
       email,
@@ -38,20 +32,27 @@ const sendUserOtp = async (req, res) => {
       createdAt: Date.now(),
     });
 
-    // Send email with OTP
-    const mailOptions = {
-      from: process.env.SMTP_USER,
-      to: email,
-      subject: "Your Verification Code",
-      html: `
-        <h2>Email Verification</h2>
-        <p>Your OTP code is:</p>
-        <h1 style="color:#0A2A54">${otp}</h1>
-        <p>This code will expire in 5 minutes.</p>
-      `,
-    };
-
-    await transporter.sendMail(mailOptions);
+    // Mailjet send email
+    await mailjet
+      .post("send", { version: "v3.1" })
+      .request({
+        Messages: [
+          {
+            From: {
+              Email: process.env.MAILJET_SENDER_EMAIL,
+              Name: "RidePay"
+            },
+            To: [{ Email: email }],
+            Subject: "Your Verification Code",
+            HTMLPart: `
+              <h2>Email Verification</h2>
+              <p>Your OTP code is:</p>
+              <h1 style="color:#0A2A54">${otp}</h1>
+              <p>This code will expire in 5 minutes.</p>
+            `
+          }
+        ]
+      });
 
     return res.json({ success: true, message: "OTP sent to email" });
   } catch (error) {
@@ -61,13 +62,12 @@ const sendUserOtp = async (req, res) => {
 };
 
 
-// 2. Verify OTP
+// 2. Verify OTP — unchanged
 const verifyUserOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
     if (!email || !otp) return res.status(400).json({ error: 'Email and OTP required' });
 
-    // Find OTP entries for this email
     const snapshot = await db.ref('temp-user-otp')
       .orderByChild('email')
       .equalTo(email)
@@ -92,15 +92,13 @@ const verifyUserOtp = async (req, res) => {
       return res.status(400).json({ error: 'Invalid OTP' });
     }
 
-    // Check expiry (5 minutes)
     const isExpired = Date.now() - data.createdAt > 5 * 60 * 1000;
     if (isExpired) {
       await db.ref(`temp-user-otp/${matchedKey}`).remove();
       return res.status(400).json({ error: 'OTP expired' });
     }
 
-    // ✅ Valid OTP
-    await db.ref(`temp-user-otp/${matchedKey}`).remove(); // cleanup
+    await db.ref(`temp-user-otp/${matchedKey}`).remove();
     return res.json({ success: true, message: 'OTP verified' });
   } catch (error) {
     console.error('Error verifying OTP:', error);
